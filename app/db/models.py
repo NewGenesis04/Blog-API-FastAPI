@@ -25,7 +25,7 @@ class Blog(Base):
                         default=lambda: datetime.now(timezone.utc))
     published_at = Column(DateTime, index=True, default=None)
     published = Column(Boolean, index=True, default=False)
-    author_id = Column(Integer, ForeignKey('users.id'))
+    author_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     author = relationship("User", back_populates="blogs")
 
     def __repr__(self):
