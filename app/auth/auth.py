@@ -1,11 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
-from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from jose import JWTError, jwt
-from typing import Optional
-from app.main import filter_user
+from app.utils import filter_user
 from app.config import settings
 from app.db.database import get_db
 from app.db.models import User

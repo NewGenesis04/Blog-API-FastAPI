@@ -1,6 +1,4 @@
-from gc import get_debug
-from multiprocessing import synchronize
-from fastapi import FastAPI, HTTPException, Depends, status, Response
+from fastapi import HTTPException, Depends, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from typing import Optional, List
@@ -24,14 +22,12 @@ def get_users(db: Session = Depends(get_db), ) -> List[schemas.User]:
         print(f"Error deleting blog: {str(e)}")
         raise HTTPException(
            status_code=500, detail="Error fetching users")
-
-
+    
 
 @router.get('/current')
 def get_user_by_id(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> schemas.User:
     try:
-        id = user.id
-        fetched_user = db.query(models.User).filter(models.User.id == id).first()
+        fetched_user = db.query(models.User).filter(models.User.id == user.id).first()
         if not fetched_user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=f'User of id{id} not found')
@@ -47,8 +43,7 @@ def get_user_by_id(user: User = Depends(get_current_user), db: Session = Depends
 @router.put('/update')
 def update_user(request: schemas.UserUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
-        id = user.id
-        current_user = filter_user(db, models.User.id == id).first()
+        current_user = filter_user(db, models.User.id == user.id).first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         current_user.username = request.username
@@ -64,8 +59,7 @@ def update_user(request: schemas.UserUpdate, user: User = Depends(get_current_us
 @router.delete('/delete')
 def delete_user(request: schemas.UserDelete, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
-        id = user.id
-        current_user = filter_user(db, models.User.id == id).first()
+        current_user = filter_user(db, models.User.id == user.id).first()
         if not current_user:
             raise HTTPException(status_code=404, detail="User not found")
         current_user.delete(synchronize=False)
