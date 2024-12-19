@@ -20,7 +20,6 @@ class BlogCreate(BlogBase):
     class Config:
         from_attributes = True
         extra = "forbid"
-    pass
 
 
 class BlogSummary(BaseModel):  # summarised blog response model.
@@ -53,8 +52,15 @@ class UserBase(BaseModel):
         extra = "forbid"
 
 
+class UserDelete(UserBase):
+    pass
+
 class UserCreate(UserBase):
     password: str
+
+class UserUpdate(UserBase):
+    pass
+
 
 class UserSummary(BaseModel):
     id: int

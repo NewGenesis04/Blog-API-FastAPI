@@ -28,5 +28,3 @@ htmlcov/
 # OS-specific files
 .DS_Store
 Thumbs.db
-
-alembic/versions/__pycache__/

@@ -21,7 +21,3 @@ app.include_router(blog_router, prefix="/blog", tags=["blog"])
 app.include_router(user_router, prefix="/user", tags=["user"])
 
 
-@app.get("/protected", tags=["auth"])
-def protected_route(user: User = Depends(get_current_user)):
-    return {"message": f"Hello, {user.username}! You have access to this route."}
-
