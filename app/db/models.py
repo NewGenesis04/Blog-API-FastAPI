@@ -11,7 +11,7 @@ class User(Base):
     username = Column(String(255), nullable=False)
     email = Column(String(255), nullable=False, unique=True)
     password = Column(String(255), nullable=False)
-    role = Column(String(255), nullable=False, default= 'view')
+    role = Column(String(255), nullable=False, default= 'author')
     blogs = relationship("Blog", back_populates="author")
 
     def __repr__(self):
