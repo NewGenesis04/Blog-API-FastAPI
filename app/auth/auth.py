@@ -28,7 +28,7 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)) -> sc
         raise HTTPException(status_code=400, detail="Email already registered")
     try:
         hashed_password = hash_password(user.password)
-        new_user = User(username=user.username, email=user.email, password=hashed_password)
+        new_user = User(username=user.username, email=user.email, role= user.role, password=hashed_password)
         db.add(new_user)
         db.commit()
         db.refresh(new_user)

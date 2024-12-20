@@ -46,6 +46,7 @@ class Blog(BlogBase):
 class UserBase(BaseModel):
     username: str
     email: str
+    role: str
 
     class Config:
         from_attributes = True
@@ -66,6 +67,7 @@ class UserSummary(BaseModel):
     id: int
     username: str
     email: str
+    role: str
 
     class Config:
         from_attributes = True

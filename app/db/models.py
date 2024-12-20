@@ -1,3 +1,4 @@
+from email.policy import default
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
@@ -10,10 +11,11 @@ class User(Base):
     username = Column(String(255), nullable=False)
     email = Column(String(255), nullable=False, unique=True)
     password = Column(String(255), nullable=False)
+    role = Column(String(255), nullable=False, default= 'view')
     blogs = relationship("Blog", back_populates="author")
 
     def __repr__(self):
-        return f"<User(id={self.id}, name='{self.username}', email='{self.email}')>"
+        return f"<User(id={self.id}, name={self.username}, email='{self.email}, role={self.role}')>"
 
 
 class Blog(Base):

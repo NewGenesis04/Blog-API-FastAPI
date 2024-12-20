@@ -1,10 +1,11 @@
 from passlib.context import CryptContext
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from app.utils import filter_user
 from app.config import settings
+from typing import List
 from app.db.database import get_db
 from app.db.models import User
 from app.db import schemas
@@ -68,3 +69,12 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         print(f"JWT Error: {e}")
         raise HTTPException(status_code=401, detail="Invalid token")
 
+def role_required(allowed_roles: List[str]):
+    def role_check(user: User = Depends(get_current_user)):
+        if user.role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"You do not have the required role(s). Allowed roles: {allowed_roles}",
+            )
+        return user
+    return role_check
