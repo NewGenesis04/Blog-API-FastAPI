@@ -13,7 +13,7 @@ from fastapi import APIRouter
 router = APIRouter(dependencies=[Depends(get_current_user)], tags=['user'])
 
 @router.get('/all') 
-def get_users(db: Session = Depends(get_db), ) -> List[schemas.User]:
+def get_users(db: Session = Depends(get_db)) -> List[schemas.User]:
     try:
         users = db.query(User).all()
         return users

@@ -33,6 +33,7 @@ def verify_access_token(token: str = Depends(oauth2_scheme)) -> dict:
     
 def authenticate_user(db: Session, username: str, password: str):
     user = db.query(User).filter(User.username == username).first()
+    #TODO: Make this use email for uniqueness
     if user is None or verify_password(password, user.password) is False:
         print ("Authentication failed")
         return False

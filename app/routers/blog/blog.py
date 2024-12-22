@@ -7,14 +7,14 @@ from app.db.database import engine, get_db
 from app.db import schemas
 from app.utils import filter_blog
 from app.auth.auth import router as auth_router
-from app.auth.auth_utils import get_current_user, verify_access_token
+from app.auth.auth_utils import get_current_user, verify_access_token, role_required
 
 router = APIRouter(dependencies= [Depends(get_current_user)], tags=['blog'])
 
 
 # Blog CRUD Routes
 @router.post("/", status_code=status.HTTP_201_CREATED)
-def create_blog(request: schemas.BlogCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> schemas.BlogCreate:
+def create_blog(request: schemas.BlogCreate, user: User = Depends(role_required(['admin', 'author'])), db: Session = Depends(get_db)) -> schemas.Blog:
     try:
         new_blog = Blog(title=request.title, content=request.content, author_id=user.id)
         db.add(new_blog)
@@ -30,7 +30,7 @@ def create_blog(request: schemas.BlogCreate, user: User = Depends(get_current_us
         raise HTTPException(status_code=500, detail="Error creating blog")
 
 
-@router.get('/', status_code=status.HTTP_200_OK)
+@router.get('/', status_code=status.HTTP_200_OK, dependencies=[Depends(role_required(['admin', 'author']))])
 def get_all_blogs(db: Session = Depends(get_db), user_id: int = Query(None, description="Filter blogs by user ID")) -> List[schemas.Blog]:
     try:
         if user_id: blogs = db.query(Blog).filter(Blog.author_id == user_id).all()
@@ -48,8 +48,7 @@ def get_all_blogs(db: Session = Depends(get_db), user_id: int = Query(None, desc
         print(f"Error getting blogs: {str(e)}")
         raise HTTPException(status_code=500, detail="Error retrieving blogs")
 
-
-@router.get('/{id}', status_code=status.HTTP_200_OK, response_model=schemas.Blog)
+@router.get('/{id}', status_code=status.HTTP_200_OK, response_model=schemas.Blog, dependencies=[Depends(role_required(['author']))])
 # The response_model can be used instead of declaring the output in the -> of the function.
 # That is a cleaner method by the way. Using -> instead of declaring the response_model
 def get_blog_by_id(id: int, response: Response, db: Session = Depends(get_db)):
@@ -70,11 +69,13 @@ def get_blog_by_id(id: int, response: Response, db: Session = Depends(get_db)):
 
 
 @router.put('/{id}', status_code=status.HTTP_200_OK)
-def update_blog(request: schemas.Blog, id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def update_blog(request: schemas.BlogUpdate, id: int, user: User = Depends(role_required(['author'])), db: Session = Depends(get_db)):
     try:
         blog = filter_blog(db, Blog.id == id).first()
         if not blog:
             raise HTTPException(status_code=404, detail=f"Blog with id({id}) not found")
+
+        #TODO: Create a way to validate that the blog being updated is for the authenticated user
 
         blog.title = request.title
         blog.content = request.content
@@ -89,14 +90,16 @@ def update_blog(request: schemas.Blog, id: int, user: User = Depends(get_current
         raise HTTPException(
             status_code=500, detail="Error updating blog")
     except Exception as e:
+        db.rollback()
         print(f"Error updating blog: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Error updating blog")
 
 
-@router.delete('/{id}', status_code=status.HTTP_202_ACCEPTED)
+@router.delete('/{id}', status_code=status.HTTP_202_ACCEPTED, dependencies=[Depends(role_required(['admin', 'author']))])
 def delete_blog(id: int, db: Session = Depends(get_db)):
     try:
+        #TODO: Create a way to validate that the blog being deleted is for the authenticated user
         row = filter_blog(db, Blog.id == id).first()
         if not row:
             raise HTTPException(status_code=404, detail="Blog not found")
@@ -109,6 +112,7 @@ def delete_blog(id: int, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=500, detail="Error deleting blog")
     except Exception as e:
+        db.rollback()
         print(f"Error deleting blog: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Error deleting blog")

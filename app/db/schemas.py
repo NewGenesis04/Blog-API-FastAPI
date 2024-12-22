@@ -14,9 +14,17 @@ class BlogBase(BaseModel):
         from_attributes = True
         extra = "forbid"
 
+class BlogUpdate(BaseModel): 
+    title: str
+    content: str
+    published: bool = False
+
+    class Config:
+        from_attributes = True
+        extra = "forbid"
 
 class BlogCreate(BlogBase):
-    author_id: int
+    pass   #TODO: I need to add author_id but as optional for the admin to be able to create. The id should be gotten from get_current user by defq
     class Config:
         from_attributes = True
         extra = "forbid"
@@ -46,7 +54,7 @@ class Blog(BlogBase):
 class UserBase(BaseModel):
     username: str
     email: str
-    role: str
+    role: Optional[str] = "author"
 
     class Config:
         from_attributes = True
