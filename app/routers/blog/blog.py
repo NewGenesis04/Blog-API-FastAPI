@@ -16,7 +16,19 @@ router = APIRouter(dependencies= [Depends(get_current_user)], tags=['blog'])
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_blog(request: schemas.BlogCreate, user: User = Depends(role_required(['admin', 'author'])), db: Session = Depends(get_db)) -> schemas.Blog:
     try:
-        new_blog = Blog(title=request.title, content=request.content, author_id=user.id)
+        author_id = user.id
+        if user.role == 'admin':
+            author_id = request.author_id or user.id #Use payload id if available in request else default to current user(admin)
+                    
+            author = db.query(User).filter(User.id == request.author_id).first()
+
+            if not author:
+                raise HTTPException(
+                 status_code=404,
+                 detail=f"Author with id({request.author_id}) not found"
+                )
+
+        new_blog = Blog(title=request.title, content=request.content, author_id=author_id)
         db.add(new_blog)
         db.commit()
         db.refresh(new_blog)
@@ -25,6 +37,8 @@ def create_blog(request: schemas.BlogCreate, user: User = Depends(role_required(
         print(f"Error creating blog: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Error creating blog")
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Error creating blog: {str(e)}")
         raise HTTPException(status_code=500, detail="Error creating blog")
@@ -72,10 +86,11 @@ def get_blog_by_id(id: int, response: Response, db: Session = Depends(get_db)):
 def update_blog(request: schemas.BlogUpdate, id: int, user: User = Depends(role_required(['author'])), db: Session = Depends(get_db)):
     try:
         blog = filter_blog(db, Blog.id == id).first()
+
         if not blog:
             raise HTTPException(status_code=404, detail=f"Blog with id({id}) not found")
-
-        #TODO: Create a way to validate that the blog being updated is for the authenticated user
+        if blog.author_id != user.id:
+            raise HTTPException(status_code=403, detail="You are not authorized to update this blog")
 
         blog.title = request.title
         blog.content = request.content
@@ -84,11 +99,14 @@ def update_blog(request: schemas.BlogUpdate, id: int, user: User = Depends(role_
 
         db.commit()
         return {"detail": f"Blog with id({id}) has been updated"}
+    
     except SQLAlchemyError as e:
         db.rollback()
         print(f"Error updating blog: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Error updating blog")
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         print(f"Error updating blog: {str(e)}")
@@ -97,20 +115,27 @@ def update_blog(request: schemas.BlogUpdate, id: int, user: User = Depends(role_
 
 
 @router.delete('/{id}', status_code=status.HTTP_202_ACCEPTED, dependencies=[Depends(role_required(['admin', 'author']))])
-def delete_blog(id: int, db: Session = Depends(get_db)):
+def delete_blog(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     try:
-        #TODO: Create a way to validate that the blog being deleted is for the authenticated user
-        row = filter_blog(db, Blog.id == id).first()
-        if not row:
+        blog = db.query(Blog).filter(Blog.id == id).first()
+        if not blog:
             raise HTTPException(status_code=404, detail="Blog not found")
-        db.delete(row)
+        if user.role == 'author' and blog.author_id != user.id:
+            raise HTTPException(status_code=403, detail="You are not authorized to delete this blog")
+        
+        db.delete(blog)
         db.commit()
         return {"detail": f"Blog with id({id}) deleted"}
+    
     except SQLAlchemyError as e:
         db.rollback()
         print(f"Error deleting blog: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Error deleting blog")
+    except HTTPException:
+        # Without this the exceptions above were defaulting to the generic exception handler below
+        raise
+
     except Exception as e:
         db.rollback()
         print(f"Error deleting blog: {str(e)}")
