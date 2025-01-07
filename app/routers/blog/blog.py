@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from typing import List
 from app.db.models import Blog, User
-from app.db.database import engine, get_db
+from app.db.database import get_db
 from app.db import schemas
 from app.utils import filter_blog
 from app.auth.auth import router as auth_router
@@ -75,8 +75,6 @@ def update_blog(request: schemas.BlogUpdate, id: int, user: User = Depends(role_
         if not blog:
             raise HTTPException(status_code=404, detail=f"Blog with id({id}) not found")
 
-        #TODO: Create a way to validate that the blog being updated is for the authenticated user
-
         blog.title = request.title
         blog.content = request.content
         blog.published = request.published
@@ -99,7 +97,6 @@ def update_blog(request: schemas.BlogUpdate, id: int, user: User = Depends(role_
 @router.delete('/{id}', status_code=status.HTTP_202_ACCEPTED, dependencies=[Depends(role_required(['admin', 'author']))])
 def delete_blog(id: int, db: Session = Depends(get_db)):
     try:
-        #TODO: Create a way to validate that the blog being deleted is for the authenticated user
         row = filter_blog(db, Blog.id == id).first()
         if not row:
             raise HTTPException(status_code=404, detail="Blog not found")
