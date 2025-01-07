@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from typing import List
 from app.db.models import Blog, User
-from app.db.database import engine, get_db
+from app.db.database import get_db
 from app.db import schemas
 from app.utils import filter_blog
 from app.auth.auth import router as auth_router
