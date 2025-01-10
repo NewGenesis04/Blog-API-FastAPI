@@ -6,7 +6,6 @@ from app.db.models import Blog, User
 from app.db.database import get_db
 from app.db import schemas
 from app.utils import filter_blog
-from app.auth.auth import router as auth_router
 from app.auth.auth_utils import get_current_user, verify_access_token, role_required
 
 router = APIRouter(dependencies= [Depends(get_current_user)], tags=['blog'])
