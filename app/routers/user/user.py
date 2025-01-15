@@ -6,13 +6,13 @@ from app.db.models import Blog, User
 from app.db.database import get_db
 from app.db import schemas, models
 from app.utils import filter_user
-from app.auth.auth_utils import get_current_user, verify_access_token
+from app.auth.auth_utils import get_current_user, role_required
 from fastapi import APIRouter
 
 
 router = APIRouter(dependencies=[Depends(get_current_user)], tags=['user'])
 
-@router.get('/all') 
+@router.get('/all', dependencies=[Depends(role_required(['admin', 'author']))]) 
 def get_users(db: Session = Depends(get_db)) -> List[schemas.User]:
     try:
         users = db.query(User).all()
@@ -31,7 +31,7 @@ def get_user_by_id(user: User = Depends(get_current_user), db: Session = Depends
         if not fetched_user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=f'User of id{id} not found')
-        print(fetched_user)
+
         return fetched_user
     except (SQLAlchemyError, Exception) as e:
         db.rollback()
@@ -57,7 +57,7 @@ def update_user(request: schemas.UserUpdate, user: User = Depends(get_current_us
             status_code=500, detail="Error updating user")
     
 @router.delete('/delete')
-def delete_user(request: schemas.UserDelete, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def delete_user(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
         current_user = filter_user(db, models.User.id == user.id).first()
         if not current_user:

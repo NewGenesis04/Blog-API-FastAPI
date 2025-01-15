@@ -6,7 +6,7 @@ from app.db.models import Blog, User
 from app.db.database import get_db
 from app.db import schemas
 from app.utils import filter_blog
-from app.auth.auth_utils import get_current_user, verify_access_token, role_required
+from app.auth.auth_utils import get_current_user, role_required
 
 router = APIRouter(dependencies= [Depends(get_current_user)], tags=['blog'])
 
@@ -15,7 +15,7 @@ router = APIRouter(dependencies= [Depends(get_current_user)], tags=['blog'])
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_blog(request: schemas.BlogCreate, user: User = Depends(role_required(['admin', 'author'])), db: Session = Depends(get_db)) -> schemas.Blog:
     try:
-        author_id = user.id
+       
         if user.role == 'admin':
             author_id = request.author_id or user.id #Use payload id if available in request else default to current user(admin)
                     
@@ -26,12 +26,14 @@ def create_blog(request: schemas.BlogCreate, user: User = Depends(role_required(
                  status_code=404,
                  detail=f"Author with id({request.author_id}) not found"
                 )
-
+        author_id = user.id
+        
         new_blog = Blog(title=request.title, content=request.content, author_id=author_id)
         db.add(new_blog)
         db.commit()
         db.refresh(new_blog)
         return new_blog
+    
     except SQLAlchemyError as e:
         print(f"Error creating blog: {str(e)}")
         raise HTTPException(
@@ -60,8 +62,28 @@ def get_all_blogs(db: Session = Depends(get_db), user_id: int = Query(None, desc
     except Exception as e:
         print(f"Error getting blogs: {str(e)}")
         raise HTTPException(status_code=500, detail="Error retrieving blogs")
+  
+    
+@router.get('/current', status_code=status.HTTP_200_OK)
+def get_current_user_blogs(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> List[schemas.Blog]:
+    try:
+        blog = filter_blog(db, Blog.author_id == user.id).first()
+        if not blog:
+            raise HTTPException(status_code=404, detail="No blogs found for this user")
+        
+        return blog
+    
+    except SQLAlchemyError as e:
+        print(f"Error getting blog: {str(e)}")
+        raise HTTPException(
+                status_code=500, detail="Error getting blog")
+    except Exception as e:
+        print(f"Error getting blog: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error getting blog")
 
-@router.get('/{id}', status_code=status.HTTP_200_OK, response_model=schemas.Blog, dependencies=[Depends(role_required(['author']))])
+
+
+@router.get('/{id}', status_code=status.HTTP_200_OK, response_model=schemas.Blog, dependencies=[Depends(role_required(['admin','author']))])
 # The response_model can be used instead of declaring the output in the -> of the function.
 # That is a cleaner method by the way. Using -> instead of declaring the response_model
 def get_blog_by_id(id: int, response: Response, db: Session = Depends(get_db)):
@@ -134,7 +156,6 @@ def delete_blog(id: int, db: Session = Depends(get_db), user: User = Depends(get
     except HTTPException:
         # Without this the exceptions above were defaulting to the generic exception handler below
         raise
-
     except Exception as e:
         db.rollback()
         print(f"Error deleting blog: {str(e)}")

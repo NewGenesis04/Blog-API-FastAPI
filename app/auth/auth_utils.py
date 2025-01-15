@@ -31,11 +31,10 @@ def verify_access_token(token: str = Depends(oauth2_scheme)) -> dict:
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
     
-def authenticate_user(db: Session, username: str, password: str):
-    user = db.query(User).filter(User.username == username).first()
-    #TODO: Make this use email for uniqueness
-    if user is None or verify_password(password, user.password) is False:
-        print ("Authentication failed")
+def authenticate_user(db: Session, identifier: str, password: str):
+    user = db.query(User).filter((User.email == identifier) | (User.username == identifier)).first()
+    if user is None or not verify_password(password, user.password):
+        print("Authentication failed")
         return False
     return user
 
@@ -52,9 +51,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     try:
-        payload = jwt.decode(token, settings.JWT_SECRET_KEY,
-                             algorithms=[settings.JWT_ALGORITHM])
-
+        payload = verify_access_token(token) #Made sure the token is verified and 
         user_id: int = payload.get("sub")
         if not user_id:
             print("No user_id specified")
