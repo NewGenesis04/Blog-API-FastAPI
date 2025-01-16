@@ -8,7 +8,6 @@ from app.config import settings
 from typing import List
 from app.db.database import get_db
 from app.db.models import User
-from app.db import schemas
 from sqlalchemy.orm import Session
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
