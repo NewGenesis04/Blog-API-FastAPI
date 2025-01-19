@@ -44,10 +44,16 @@ def get_user_by_id(user: User = Depends(get_current_user), db: Session = Depends
 def update_user(request: schemas.UserUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
         current_user = filter_user(db, models.User.id == user.id).first()
-        if not user:
+        if not current_user:
             raise HTTPException(status_code=404, detail="User not found")
-        current_user.username = request.username
-        current_user.email = request.email
+        
+        if request.username is not None:
+            current_user.username = request.username
+        if request.email is not None:
+            current_user.email = request.email
+        if request.role is not None:
+            current_user.role = request.role
+            
         db.commit()
         return {"detail": f"User with id({id}) has been updated"}
     except (SQLAlchemyError, Exception) as e:

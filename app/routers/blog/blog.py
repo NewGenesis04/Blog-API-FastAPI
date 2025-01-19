@@ -45,7 +45,7 @@ def create_blog(request: schemas.BlogCreate, user: User = Depends(role_required(
         raise HTTPException(status_code=500, detail="Error creating blog")
 
 
-@router.get('/', status_code=status.HTTP_200_OK, dependencies=[Depends(role_required(['admin', 'author']))])
+@router.get('/', status_code=status.HTTP_200_OK)
 def get_all_blogs(db: Session = Depends(get_db), user_id: int = Query(None, description="Filter blogs by user ID")) -> List[schemas.Blog]:
     try:
         if user_id: blogs = db.query(Blog).filter(Blog.author_id == user_id).all()
@@ -64,7 +64,7 @@ def get_all_blogs(db: Session = Depends(get_db), user_id: int = Query(None, desc
         raise HTTPException(status_code=500, detail="Error retrieving blogs")
   
     
-@router.get('/current', status_code=status.HTTP_200_OK)
+@router.get('/current', status_code=status.HTTP_200_OK, dependencies=[Depends(role_required(['admin', 'author']))])
 def get_current_user_blogs(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> List[schemas.Blog]:
     try:
         blog = filter_blog(db, Blog.author_id == user.id).first()
@@ -82,10 +82,7 @@ def get_current_user_blogs(user: User = Depends(get_current_user), db: Session =
         raise HTTPException(status_code=500, detail="Error getting blog")
 
 
-
-@router.get('/{id}', status_code=status.HTTP_200_OK, response_model=schemas.Blog, dependencies=[Depends(role_required(['admin','author']))])
-# The response_model can be used instead of declaring the output in the -> of the function.
-# That is a cleaner method by the way. Using -> instead of declaring the response_model
+@router.get('/{id}', status_code=status.HTTP_200_OK, response_model=schemas.Blog, dependencies=[Depends(role_required(['admin', 'author', 'reader']))])
 def get_blog_by_id(id: int, response: Response, db: Session = Depends(get_db)):
     # filter_blog returns db.query(models.Blog).filter(filter_condition)
     try:

@@ -60,7 +60,6 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
             print("No user found in database")
             raise HTTPException(status_code=401, detail="User not found")
         
-        print(current_user)
         return current_user
     except JWTError as e:
         print(f"JWT Error: {e}")

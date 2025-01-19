@@ -11,8 +11,10 @@ class User(Base):
     username = Column(String(255), nullable=False)
     email = Column(String(255), nullable=False, unique=True)
     password = Column(String(255), nullable=False)
-    role = Column(String(255), nullable=False, default= 'author')
+    role = Column(String(255), nullable=False, default= 'reader')
     blogs = relationship("Blog", back_populates="author")
+    followers = relationship("Follow", foreign_keys="[Follow.followed_id]", back_populates="followed")
+    following = relationship("Follow", foreign_keys="[Follow.follower_id]", back_populates="follower")
 
     def __repr__(self):
         return f"<User(id={self.id}, name={self.username}, email='{self.email}, role={self.role}')>"
@@ -32,3 +34,20 @@ class Blog(Base):
 
     def __repr__(self):
         return f"<Blog(id={self.id}, title={self.title})>"
+    
+
+class Follow(Base):
+    __tablename__ = 'follows'
+    id = Column(Integer, primary_key=True, index=True)
+    follower_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    followed_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    created_at = Column(DateTime, index=True,
+                        default=lambda: datetime.now(timezone.utc))
+    
+    follower = relationship("User", foreign_keys=[follower_id], back_populates="following")
+    followed = relationship("User", foreign_keys=[followed_id], back_populates="followers")
+    
+
+    def __repr__(self):
+        return f"<Follow(id={self.id}, follower_id={self.follower_id}, followed_id={self.followed_id})>"
+

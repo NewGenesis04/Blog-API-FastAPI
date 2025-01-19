@@ -19,6 +19,7 @@ class BlogCreate(BlogBase):
     class Config:
         from_attributes = True
         extra = "forbid"
+
 class BlogUpdate(BaseModel): 
     title: str
     content: str
@@ -28,12 +29,11 @@ class BlogUpdate(BaseModel):
         from_attributes = True
         extra = "forbid"
 
-
 class BlogSummary(BaseModel):  # summarised blog response model.
     id: int
     title: str
     content: str
-    author: "UserSummary"
+    author_id: int
 
     class Config:
         from_attributes = True
@@ -52,34 +52,30 @@ class Blog(BlogBase):
 # Pydantic Schema for User
 class UserBase(BaseModel):
     username: str
-    email: str
-    role: Optional[str] = "author"
+    email: EmailStr
 
     class Config:
         from_attributes = True
         extra = "forbid"
 
-
-class UserDelete(UserBase):
-    pass
-
 class UserCreate(UserBase):
     password: str
+    role: Optional[str] = "author"
 
 class UserUpdate(UserBase):
+    password: Optional[str] = None
+    role: Optional[str] = "author"
     pass
 
 
 class UserSummary(BaseModel):
     id: int
     username: str
-    email: str
+    email: EmailStr
     role: str
 
     class Config:
         from_attributes = True
-
-BlogSummary.model_rebuild() #This is because the usersummary hasn't beeen defined when it was called
 
 
 class User(UserBase):
