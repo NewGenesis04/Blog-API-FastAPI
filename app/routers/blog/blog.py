@@ -48,7 +48,8 @@ def create_blog(request: schemas.BlogCreate, user: User = Depends(role_required(
 @router.get('/', status_code=status.HTTP_200_OK)
 def get_all_blogs(db: Session = Depends(get_db), user_id: int = Query(None, description="Filter blogs by user ID")) -> List[schemas.Blog]:
     try:
-        if user_id: blogs = db.query(Blog).filter(Blog.author_id == user_id).all()
+        if user_id:
+            blogs = db.query(Blog).filter(Blog.author_id == user_id).all()
         else:
             blogs = db.query(Blog).all()
         if not blogs:

@@ -84,3 +84,21 @@ class User(UserBase):
 
     class Config:
         from_attributes = True
+
+
+class FollowBase(BaseModel):
+    pass
+
+class Follow(FollowBase):
+    follower_id: int
+    followed_id: int
+    
+    class Config:
+        from_attributes = True
+
+class Unfollow(FollowBase):
+    follower_id: int
+    followed_id: int
+    
+    class Config:
+        from_attributes = True
