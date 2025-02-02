@@ -1,3 +1,4 @@
+from unittest.mock import Base
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from datetime import datetime
@@ -102,3 +103,27 @@ class Unfollow(FollowBase):
     
     class Config:
         from_attributes = True
+
+
+class CommentBase(BaseModel):
+    content: str
+    
+    class Config:
+        from_attributes = True
+
+class GetComment(CommentBase):
+    id: int
+    author_id: int
+    blog_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class CreateComment(CommentBase):
+    pass
+
+class CommentUpdate(CommentBase):
+    pass
+    

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from typing import List
+from typing import List, Optional
 from app.db.models import User, Follow
 from app.db.database import get_db
 from app.db import schemas
@@ -25,7 +25,8 @@ def follow_user(userId, db: Session = Depends(get_db), user: User = Depends(role
         db.add(new_follow)
         db.commit()
         return {"detail": f"User with id({userId}) has been followed"}
-    
+    except HTTPException:
+        raise
     except (SQLAlchemyError, Exception) as e:
         db.rollback()
         print(f"Erorr: {e}")
@@ -48,13 +49,19 @@ def unfollow(userId, db: Session = Depends(get_db), user: User = Depends(role_re
         db.commit()
         return {"detail": f"User with id({userId}) has been unfollowed"}
     
-    except (SQLAlchemyError, Exception) as e:
+    except SQLAlchemyError as e:
         db.rollback()
         print(f"Erorr: {e}")
         raise HTTPException(status_code=500, detail="Error unfollowing user")
-    
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"Erorr: {e}")
+        raise HTTPException(status_code=500, detail="Error unfollowing user")
+
 @router.get('/following', status_code=status.HTTP_200_OK)
-def get_following(alt_user: int = Query(None, description="Filter following by user ID"),db: Session = Depends(get_db), user: User = Depends(role_required(['reader', 'author']))) -> List[schemas.UserSummary]:
+def get_following(alt_user: Optional[int] = None, db: Session = Depends(get_db), user: User = Depends(role_required(['reader', 'author']))) -> List[schemas.UserSummary]:
     try:
         if alt_user:
             following = db.query(User).join(Follow, Follow.followed_id == User.id).filter(Follow.follower_id == alt_user).all()
@@ -66,7 +73,14 @@ def get_following(alt_user: int = Query(None, description="Filter following by u
         
         return following
     
-    except (SQLAlchemyError, Exception) as e:
+    except SQLAlchemyError as e:
+        db.rollback()
+        print(f"Error getting following: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail="Error getting following")
+    except HTTPException:
+        raise
+    except Exception as e:
         db.rollback()
         print(f"Error getting following: {str(e)}")
         raise HTTPException(
@@ -74,7 +88,7 @@ def get_following(alt_user: int = Query(None, description="Filter following by u
     
 
 @router.get('/followers', status_code=status.HTTP_200_OK)
-def get_followers(alt_user: int = Query(None, description="Filter following by user ID"), db: Session = Depends(get_db), user: User = Depends(role_required(['reader', 'author']))) -> List[schemas.UserSummary]:
+def get_followers(alt_user: Optional[int] = None, db: Session = Depends(get_db), user: User = Depends(role_required(['reader', 'author']))) -> List[schemas.UserSummary]:
     try:
         if alt_user:
             followers = db.query(User).join(Follow, Follow.follower_id == User.id).filter(Follow.followed_id == alt_user).all()
@@ -82,14 +96,22 @@ def get_followers(alt_user: int = Query(None, description="Filter following by u
             followers = db.query(User).join(Follow, Follow.follower_id == User.id).filter(Follow.followed_id == user.id).all()
         if not followers:
             raise HTTPException(
-                status_code=404, detail="Following not found")
+                status_code=404, detail="Followers not found")
         
         return followers
     
-    except (SQLAlchemyError, Exception) as e:
+    except SQLAlchemyError as e:
+        db.rollback()
+        print(f"Error getting followers: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail="Error getting followers")
+    except HTTPException:
+        raise
+    except Exception as e:
         db.rollback()
         print(f"Error getting followers: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Error getting followers")
     
-#TODO: Change the Query to use just Optional[datatype]
+#TODO: Change the Query to use just Optional[datatype] = None
+# *, ALLOWS YOU TO LIST PARAMS IN ANY ORDER.... So query before default params: From tomi fast api (36:52)e.t.c

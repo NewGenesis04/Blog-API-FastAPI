@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, HTTPException, Depends, status, Response
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from typing import List
+from typing import List, Optional
 from app.db.models import Blog, User
 from app.db.database import get_db
 from app.db import schemas
@@ -46,7 +46,7 @@ def create_blog(request: schemas.BlogCreate, user: User = Depends(role_required(
 
 
 @router.get('/', status_code=status.HTTP_200_OK)
-def get_all_blogs(db: Session = Depends(get_db), user_id: int = Query(None, description="Filter blogs by user ID")) -> List[schemas.Blog]:
+def get_all_blogs(db: Session = Depends(get_db), user_id: Optional[int] = None) -> List[schemas.Blog]:
     try:
         if user_id:
             blogs = db.query(Blog).filter(Blog.author_id == user_id).all()
@@ -56,6 +56,8 @@ def get_all_blogs(db: Session = Depends(get_db), user_id: int = Query(None, desc
             raise HTTPException(
                 status_code=404, detail="Blogs not found")  # Method 1
         return blogs
+    except HTTPException:
+        raise
     except SQLAlchemyError as e:
         print(f"Error getting blogs: {str(e)}")
         raise HTTPException(
