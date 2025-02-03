@@ -384,58 +384,59 @@ Before installing the dependencies, ensure that the following are installed on y
 ### 1. Python 3.10+:
 The application requires Python version 3.10 or higher. You can verify your Python version by running:
 
-    ```sh
+```sh
     python --version
-    ```
+```
 
-If Python is not installed, download it from <python.org>.
-
-## Steps
+If Python is not installed, download it from [python.org](https://www.python.org/).
 
 ### 2. Pip: 
 Ensure that pip (Python's package installer) is installed. You can check this by running:
 
-    ```sh
-    pip --version
-    ```
+```sh
+   pip --version
+```
+
+## Steps
 
 ### 1. Clone the Repository:
 
-    ```sh
-    git clone https://github.com/NewGenesis04/Blog-API-FastAPI.git
-    cd Blog-Fast-API
-    ```
+```sh
+   git clone https://github.com/NewGenesis04/Blog-API-FastAPI.git
+   cd Blog-Fast-API
+```
 
 ### 2. Set Up Virtual Environment:
 
-    ```sh
-    python -m venv .venv
-    .venv\Scripts\activate
-    ```
+```sh
+  python -m venv .venv
+  .venv\Scripts\activate 
+```
 
 ### 3. Install Dependencies:
 
-    ```sh
-    pip install -r requirements.txt
-    ```
+```sh
+   pip install -r requirements.txt
+```
 
 ### 4. Configure Environment Variables:
 Create a .env file in the root directory and configure the following:
 
-    ```ini
-    DATABASE_URL="mysql+pymysql://username:password@localhost/db_name"
-    JWT_SECRET_KEY="your-secret-key"
-    JWT_ALGORITHM="HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES=60
-    ```
+```ini
+DATABASE_URL="mysql+pymysql://username:password@localhost/db_name"
+JWT_SECRET_KEY="your-secret-key"
+JWT_ALGORITHM="HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+```
     
 ### 5. Run Migrations:
 
-    ```sh
+```sh
     alembic upgrade head
-    ```
+```
+    
 ### 6. Start the Application:
 
-    ```sh
-    uvicorn app.main:app --reload
-    ```
+```sh
+uvicorn app.main:app --reload
+```
