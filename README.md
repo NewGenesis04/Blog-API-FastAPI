@@ -10,7 +10,7 @@
 - [Dependencies and Libraries](#dependencies-and-libraries)
 - [Installation and Setup](#installation-and-setup)
 - [Contributing](#contributing)
-- [Liscense](#license)
+- [License](#license)
 
 # Introduction
 
@@ -24,9 +24,56 @@ The application uses JWT-based authentication with role-based access control. Us
 - **author** : Can create, update, and delete their own blogs and comments.
 - **admin** : Has full control over all resources.
 
+### 1. Login
+
+- **Endpoint**: /auth/login
+- **Method**: POST
+- **Request**:
+
+    ```json
+    {
+        "username": "author1",
+        "password": "password123"
+    }
+    ```
+- **Response(Success)**:
+
+    ```json
+    {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        "token_type": "bearer"
+    }
+    ```
+
+### 2. Register
+
+- **Endpoint**: /auth/register
+- **Method**: POST
+- **Request**:
+
+    ```json
+    {
+        "username": "newuser",
+        "email": "newuser@example.com",
+        "password": "password123",
+        "role": "author"
+    }
+    ```
+- **Response(Success)**:
+
+    ```json
+    {
+        "id": 3,
+        "username": "newuser",
+        "email": "newuser@example.com",
+        "role": "author"
+    }
+    ```
+
 Endpoints requiring authentication are protected using **get_current_user**, while specific roles are enforced using **role_required**
 
 # User Management
+
 ## Routes
 ### 1. Get All Users
 - **Endpoint**: /user/all
@@ -97,7 +144,9 @@ Endpoints requiring authentication are protected using **get_current_user**, whi
     }
 
 # Blog Management
+
 ## Routes
+
 ### 1. Create Blog
 - Endpoint : /blog/
 - Method : POST
@@ -213,7 +262,7 @@ No request body required.
     "detail": "Blog with id(1) deleted"
     }
 
-## Follow Management
+# Follow Management
 
 ### 1. Follow User
 - **Endpoint**: /follow/{userId}
@@ -285,7 +334,7 @@ No request body required.
     }
     ]
 
-## Comment Management
+# Comment Management
 
 ### 1. Create Comment
 - **Endpoint**: /comment/{blogId}
