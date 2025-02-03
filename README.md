@@ -32,6 +32,7 @@ Endpoints requiring authentication are protected using **get_current_user**, whi
 - **Description**: Fetches all users (requires admin or author role).
 - **Request**: No request body required.
 - **Response(Success)**:
+
     ```json
     [
         {
@@ -67,6 +68,7 @@ Endpoints requiring authentication are protected using **get_current_user**, whi
 - **Method**: PUT
 - **Description**: Updates the profile of the currently authenticated user.
 - **Request**:
+
     ``` json
     {
     "username": "updatedAuthor",
@@ -85,6 +87,7 @@ Endpoints requiring authentication are protected using **get_current_user**, whi
 - **Description**: Deletes the currently authenticated user.
 - **Request**: No request body required.
 - **Response(Success)**: 
+
     ``` json
     {
     "detail": "User with name: author1 and id: 1 has been deleted"
@@ -97,6 +100,7 @@ Endpoints requiring authentication are protected using **get_current_user**, whi
 - Method : POST
 - Description : Creates a new blog post. Admins can optionally specify an author ID.
 - **Request**:
+
     ```json
     {
     "title": "New Blog Post",
@@ -105,6 +109,7 @@ Endpoints requiring authentication are protected using **get_current_user**, whi
     }
 
 - **Response(Success)**: 
+
     ```json
     {
     "id": 1,
@@ -113,3 +118,34 @@ Endpoints requiring authentication are protected using **get_current_user**, whi
     "author_id": 1,
     "created_at": "2023-09-25T12:00:00Z"
     }
+
+### 2. Get All Blogs:
+- **Endpoint**: /blog/
+- **Method**: GET
+- **Description**: Fetches all blogs or filters by a specific user ID.
+- **Request**: Optional query parameter **user_id**
+- **Response(Success)**:
+
+    ``` json
+    [
+    {
+        "id": 1,
+        "title": "Blog Post 1",
+        "content": "Content of Blog Post 1",
+        "author_id": 1
+    },
+    {
+        "id": 2,
+        "title": "Blog Post 2",
+        "content": "Content of Blog Post 2",
+        "author_id": 2
+    }
+    ]
+
+### 3. Get Current User's Blogs
+- **Endpoint**: /blog/current
+- **Method**: GET
+- **Request**: No request body required.
+
+
+    
