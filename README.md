@@ -146,6 +146,62 @@ Endpoints requiring authentication are protected using **get_current_user**, whi
 - **Endpoint**: /blog/current
 - **Method**: GET
 - **Request**: No request body required.
+- **Response(Success)**:
 
+    ```json
+    [
+    {
+        "id": 1,
+        "title": "Blog Post 1",
+        "content": "Content of Blog Post 1",
+        "author_id": 1
+    }
+    ]
 
-    
+### 4. Get Blog by ID
+- **Endpoint**: /blog/{id}
+- **Method**: GET
+- **Request**: No request body required.
+- **Response(Success)**: 
+
+    ``` json
+    {
+    "id": 1,
+    "title": "Blog Post 1",
+    "content": "Content of Blog Post 1",
+    "author_id": 1,
+    "created_at": "2023-09-25T12:00:00Z"
+    }
+
+5. Update Blog
+**Endpoint**: /blog/{id}
+**Method**: PUT
+- **Request**:
+
+    ``` json
+    {
+    "title": "Updated Blog Title",
+    "content": "Updated content of the blog post.",
+    "published": false
+    }
+
+- **Response(Success)**:
+
+    ``` json
+    {
+    "title": "Updated Blog Title",
+    "content": "Updated content of the blog post.",
+    "published": false
+    }
+
+### 6. Delete Blog
+- **Endpoint**: /blog/{id}
+- **Method**: DELETE
+- **Request**:
+No request body required.
+- **Response(Success)**:
+
+    ``` json
+    {
+    "detail": "Blog with id(1) deleted"
+    }
