@@ -385,7 +385,7 @@ Before installing the dependencies, ensure that the following are installed on y
 The application requires Python version 3.10 or higher. You can verify your Python version by running:
 
 ```sh
-    python --version
+python --version
 ```
 
 If Python is not installed, download it from [python.org](https://www.python.org/).
@@ -394,7 +394,7 @@ If Python is not installed, download it from [python.org](https://www.python.org
 Ensure that pip (Python's package installer) is installed. You can check this by running:
 
 ```sh
-   pip --version
+pip --version
 ```
 
 ## Steps
@@ -402,21 +402,21 @@ Ensure that pip (Python's package installer) is installed. You can check this by
 ### 1. Clone the Repository:
 
 ```sh
-   git clone https://github.com/NewGenesis04/Blog-API-FastAPI.git
-   cd Blog-Fast-API
+git clone https://github.com/NewGenesis04/Blog-API-FastAPI.git
+cd Blog-Fast-API
 ```
 
 ### 2. Set Up Virtual Environment:
 
 ```sh
-  python -m venv .venv
-  .venv\Scripts\activate 
+python -m venv .venv
+.venv\Scripts\activate 
 ```
 
 ### 3. Install Dependencies:
 
 ```sh
-   pip install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 ### 4. Configure Environment Variables:
@@ -431,10 +431,31 @@ ACCESS_TOKEN_EXPIRE_MINUTES=60
     
 ### 5. Run Migrations:
 
+Delete the alembic folder and run these commands:
+
 ```sh
-    alembic upgrade head
+alembic init
 ```
-    
+
+Modify the alembic.ini file:
+```sh
+from dotenv import load_dotenv
+import os
+load_dotenv()
+config.set_main_option('sqlalchemy.url', os.getenv('DATABASE_URL'))
+```
+Create migration file:
+
+```sh
+alembic revision -m "Your migration message"
+```
+
+Apply migrations to the database:
+
+```sh
+alembic upgrade head
+```
+
 ### 6. Start the Application:
 
 ```sh
