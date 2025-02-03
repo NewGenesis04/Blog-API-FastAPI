@@ -14,7 +14,18 @@
 
 # Introduction
 
-This project is a FastAPI-based application designed to manage blogs, users, comments, and follow relationships. It includes features such as user authentication, role-based authorization, CRUD operations for blogs and comments, and the ability to follow/unfollow other users.
+This project is a FastAPI-based blog management system that provides a robust and scalable backend for handling blogs, users, comments, and follow relationships. Built with performance and security in mind, it offers a seamless experience for user authentication, role-based access control, and efficient content management.
+
+### Key Features:
+- ✅ User Authentication & Authorization – Secure login, JWT-based authentication, and role-based access control (admin, author, reader).
+- ✅ Blog Management – Create, update, delete, and retrieve blogs with structured data handling.
+- ✅ User & Follow System – Allow users to follow/unfollow others and manage their social interactions.
+- ✅ Comment System – Enable users to add, edit, and delete comments on blog posts.
+- ✅ Fast & Scalable – Powered by FastAPI, ensuring high performance with asynchronous request handling.
+- ✅ Database Integration – Uses MySQL with SQLAlchemy for efficient data management.
+- ✅ Environment Configuration – Secure .env file usage for managing sensitive configurations.
+
+This API serves as a foundation for blog-based applications and can be extended to support additional features like notifications, analytics, and more. 🚀
 
 # Authentication and Authorization
 
