@@ -55,6 +55,7 @@ Endpoints requiring authentication are protected using **get_current_user**, whi
 - **Description**: Fetches the currently authenticated user.
 - **Request**: No request body required.
 - **Response(Success)**:
+
     ```json
     {
     "id": 1,
@@ -145,6 +146,7 @@ Endpoints requiring authentication are protected using **get_current_user**, whi
 ### 3. Get Current User's Blogs
 - **Endpoint**: /blog/current
 - **Method**: GET
+- **Description**: Fetches all blogs authored by the currently authenticated user.
 - **Request**: No request body required.
 - **Response(Success)**:
 
@@ -161,6 +163,7 @@ Endpoints requiring authentication are protected using **get_current_user**, whi
 ### 4. Get Blog by ID
 - **Endpoint**: /blog/{id}
 - **Method**: GET
+- **Description**: Fetches a specific blog by its ID.
 - **Request**: No request body required.
 - **Response(Success)**: 
 
@@ -174,8 +177,9 @@ Endpoints requiring authentication are protected using **get_current_user**, whi
     }
 
 5. Update Blog
-**Endpoint**: /blog/{id}
-**Method**: PUT
+- **Endpoint**: /blog/{id}
+- **Method**: PUT
+- **Description**: Updates a specific blog post. Only the author of the blog can perform this action.
 - **Request**:
 
     ``` json
@@ -197,6 +201,7 @@ Endpoints requiring authentication are protected using **get_current_user**, whi
 ### 6. Delete Blog
 - **Endpoint**: /blog/{id}
 - **Method**: DELETE
+- **Description**: Deletes a specific blog post. Only the author or an admin can perform this action.
 - **Request**:
 No request body required.
 - **Response(Success)**:
@@ -205,3 +210,232 @@ No request body required.
     {
     "detail": "Blog with id(1) deleted"
     }
+
+## Follow Management
+
+### 1. Follow User
+- **Endpoint**: /follow/{userId}
+- **Method**: POST
+- **Description**: Allows the authenticated user to follow another user by their ID.
+- **Request**:No request body required.
+- **Response(Success)**:
+
+    ```json
+    {
+    "detail": "User with id(2) has been followed"
+    }
+
+### 2. Unfollow User
+- **Endpoint**: /follow/{userId}
+- **Method**: DELETE
+- **Description**: Allows the authenticated user to unfollow another user by their ID.
+- **Request**: No request body required.
+- **Response(Success)**:
+
+    ``` json
+    {
+    "detail": "User with id(2) has been unfollowed"
+    }
+
+### 3. Get Following List
+- **Endpoint**: /follow/following
+- **Method**: GET
+- **Description**: Retrieves the list of users that the authenticated user is following. Optionally, it can retrieve the following list for another user by specifying their ID.
+- **Request**: Optional query parameter **alt_user**.
+- **Response(Success)**:
+
+    ``` json
+    [
+    {
+        "id": 2,
+        "username": "user2",
+        "email": "user2@example.com",
+        "role": "author"
+    },
+    {
+        "id": 3,
+        "username": "user3",
+        "email": "user3@example.com",
+        "role": "reader"
+    }
+    ]
+
+### 4. Get Followers List
+- **Endpoint**: /follow/followers
+- **Method**: GET
+- **Description**: Retrieves the list of users who are following the authenticated user. Optionally, it can retrieve the followers list for another user by specifying their ID.
+- **Request**:Optional query parameter **alt_user**.
+- **Response(Success)**:
+
+    ``` json
+    [
+    {
+        "id": 1,
+        "username": "author1",
+        "email": "author1@example.com",
+        "role": "author"
+    },
+    {
+        "id": 4,
+        "username": "reader2",
+        "email": "reader2@example.com",
+        "role": "reader"
+    }
+    ]
+
+## Comment Management
+
+### 1. Create Comment
+- **Endpoint**: /comment/{blogId}
+- **Method**: POST
+- **Description**: Allows the authenticated user to create a new comment on a specific blog post.
+- **Request**: 
+
+    ``` json
+    {
+    "content": "This is a great blog post!"
+    }
+
+- **Response(Success)**:
+
+    ``` json
+    {
+    "id": 1,
+    "author_id": 1,
+    "blog_id": 1,
+    "content": "This is a great blog post!",
+    "created_at": "2023-09-25T12:00:00Z"
+    }
+
+### 2. Get Comments
+- **Endpoint**: /comment/{blogId}
+- **Method**: GET
+- **Description**: Retrieves comments for a specific blog post. Supports filtering by author ID or fetching all comments (if authorized).
+- **Request**: Optional query parameters **author_id** or **include_all**.
+- **Response(Success)**:
+
+    ``` json
+    [
+    {
+        "id": 1,
+        "author_id": 1,
+        "blog_id": 1,
+        "content": "This is a great blog post!",
+        "created_at": "2023-09-25T12:00:00Z"
+    },
+    {
+        "id": 2,
+        "author_id": 2,
+        "blog_id": 1,
+        "content": "I agree with you.",
+        "created_at": "2023-09-25T13:00:00Z"
+    }
+    ]
+
+### 3. Update Comment
+- **Endpoint**: /comment/{commentId}
+- **Method**: PUT
+- **Description**: Allows the authenticated user to update their own comment.
+- **Request**:
+
+    ``` json
+    {
+    "content": "Updated comment content."
+    }
+
+- **Response(Success)**:
+
+    ``` json
+    {
+    "detail": "Comment with id(1) has been updated"
+    }
+
+### 4. Delete Comment
+- **Endpoint**: /comment/{commentId}
+- **Method**: DELETE
+- **Description**: Allows the authenticated user to delete their own comment.
+- **Request**: No request body required.
+- **Response(Success)**:
+
+    ```json
+    {
+    "detail": "Comment with id(1) has been deleted"
+    }
+
+# Dependencies and Libraries
+
+This application relies on the following key libraries:
+
+- FastAPI: High-performance web framework for building APIs.
+- SQLAlchemy: ORM for database interactions.
+- Alembic: Database migration tool.
+- Pydantic: Data validation and settings management.
+- Passlib: Password hashing library.
+- JWT: JSON Web Token implementation for authentication.
+- Uvicorn: ASGI server for running the application.
+- Starlette: Underlying framework for FastAPI.
+
+# Installation and Setup
+
+## Prerequisites
+
+Before installing the dependencies, ensure that the following are installed on your system:
+
+### 1. Python 3.10+:
+The application requires Python version 3.10 or higher. You can verify your Python version by running:
+
+    ```sh
+    python --version
+    ```
+
+If Python is not installed, download it from <python.org>.
+
+## Steps
+
+### 2. Pip: 
+Ensure that pip (Python's package installer) is installed. You can check this by running:
+
+    ```sh
+    pip --version
+    ```
+
+### 1. Clone the Repository:
+
+    ```sh
+    git clone https://github.com/NewGenesis04/Blog-API-FastAPI.git
+    cd Blog-Fast-API
+    ```
+
+### 2. Set Up Virtual Environment:
+
+    ```sh
+    python -m venv .venv
+    .venv\Scripts\activate
+    ```
+
+### 3. Install Dependencies:
+
+    ```sh
+    pip install -r requirements.txt
+    ```
+
+### 4. Configure Environment Variables:
+Create a .env file in the root directory and configure the following:
+
+    ```ini
+    DATABASE_URL="mysql+pymysql://username:password@localhost/db_name"
+    JWT_SECRET_KEY="your-secret-key"
+    JWT_ALGORITHM="HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES=60
+    ```
+    
+### 5. Run Migrations:
+
+    ```sh
+    alembic upgrade head
+    ```
+### 6. Start the Application:
+
+    ```sh
+    uvicorn app.main:app --reload
+    ```
