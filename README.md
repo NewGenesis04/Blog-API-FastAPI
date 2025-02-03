@@ -9,6 +9,8 @@
 - [Pydantic Schemas](#pydantic-schemas)
 - [Dependencies and Libraries](#dependencies-and-libraries)
 - [Installation and Setup](#installation-and-setup)
+- [Contributing](#contributing)
+- [Liscense](#license)
 
 # Introduction
 
@@ -461,3 +463,9 @@ alembic upgrade head
 ```sh
 uvicorn app.main:app --reload
 ```
+
+# Contributing
+Contributions are welcome! Please fork the repository and submit a pull request with your changes.
+
+# License
+This project is licensed under the MIT License. See the **LICENSE** file for details.
