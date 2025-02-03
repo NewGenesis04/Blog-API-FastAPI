@@ -65,7 +65,8 @@ class UserCreate(UserBase):
 
 class UserUpdate(UserBase):
     password: Optional[str] = None
-    role: Optional[str] = "author"
+    role: Optional[str] = None
+    bio: Optional[str] = None
     pass
 
 

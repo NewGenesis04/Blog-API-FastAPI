@@ -47,6 +47,8 @@ def update_user(request: schemas.UserUpdate, user: User = Depends(get_current_us
         if not current_user:
             raise HTTPException(status_code=404, detail="User not found")
         
+        if request.bio is not None:
+            current_user.bio = request.bio
         if request.username is not None:
             current_user.username = request.username
         if request.email is not None:
@@ -55,7 +57,7 @@ def update_user(request: schemas.UserUpdate, user: User = Depends(get_current_us
             current_user.role = request.role
             
         db.commit()
-        return {"detail": f"User with id({id}) has been updated"}
+        return {"detail": f"User with id({user.id}) has been updated"}
     except (SQLAlchemyError, Exception) as e:
         db.rollback()
         print(f"Error updating user: {str(e)}")

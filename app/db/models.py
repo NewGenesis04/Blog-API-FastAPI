@@ -10,6 +10,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(255), nullable=False)
     email = Column(String(255), nullable=False, unique=True)
+    bio = Column(Text, nullable=True)
     password = Column(String(255), nullable=False)
     role = Column(String(255), nullable=False, server_default='reader')
     blogs = relationship("Blog", back_populates="author")
