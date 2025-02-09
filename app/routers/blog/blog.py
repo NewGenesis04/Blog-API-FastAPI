@@ -15,23 +15,24 @@ router = APIRouter(dependencies= [Depends(get_current_user)], tags=['blog'])
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_blog(request: schemas.BlogCreate, user: User = Depends(role_required(['admin', 'author'])), db: Session = Depends(get_db)) -> schemas.Blog:
     try:
-       
-        if user.role == 'admin':
-            author_id = request.author_id or user.id #Use payload id if available in request else default to current user(admin)
-                    
-            author = db.query(User).filter(User.id == request.author_id).first()
+       if user.role == 'admin':
+        author_id = request.author_id or user.id #Use payload id if available in request else default to current user(admin)
+                
+        author = db.query(User).filter(User.id == request.author_id).first()
 
-            if not author:
-                raise HTTPException(
-                 status_code=404,
-                 detail=f"Author with id({request.author_id}) not found"
-                )
-        author_id = user.id
+        if not author:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Author with id({request.author_id}) not found"
+            )
         
-        new_blog = Blog(title=request.title, content=request.content, author_id=author_id)
+        author_id = user.id
+
+        new_blog = Blog(title=request.title, content=request.content, published=request.published, published_at=request.published_at, author_id=author_id)
         db.add(new_blog)
         db.commit()
         db.refresh(new_blog)
+
         return new_blog
     
     except SQLAlchemyError as e:
@@ -46,15 +47,24 @@ def create_blog(request: schemas.BlogCreate, user: User = Depends(role_required(
 
 
 @router.get('/', status_code=status.HTTP_200_OK)
-def get_all_blogs(db: Session = Depends(get_db), user_id: Optional[int] = None) -> List[schemas.Blog]:
+def get_all_blogs(db: Session = Depends(get_db), user: User = Depends(get_current_user), user_id: Optional[int] = None) -> List[schemas.Blog]:
     try:
-        if user_id:
-            blogs = db.query(Blog).filter(Blog.author_id == user_id).all()
+        query = db.query(Blog)
+        
+        if user.role == 'admin':
+            if user_id:
+                query = query.filter(Blog.author_id == user_id)
         else:
-            blogs = db.query(Blog).all()
+            if user_id:
+                query = query.filter(Blog.author_id == user_id, Blog.published == True)
+            else:
+                query = query.filter(Blog.published == True)
+        
+        blogs = query.all()
+
         if not blogs:
-            raise HTTPException(
-                status_code=404, detail="Blogs not found")  # Method 1
+            raise HTTPException(status_code=404, detail="Blogs not found")
+
         return blogs
     except HTTPException:
         raise
@@ -86,18 +96,21 @@ def get_current_user_blogs(user: User = Depends(get_current_user), db: Session =
 
 
 @router.get('/{id}', status_code=status.HTTP_200_OK, response_model=schemas.Blog, dependencies=[Depends(role_required(['admin', 'author', 'reader']))])
-def get_blog_by_id(id: int, response: Response, db: Session = Depends(get_db)):
+def get_blog_by_id(id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     # filter_blog returns db.query(models.Blog).filter(filter_condition)
     try:
         blog = filter_blog(db, Blog.id == id).first()
         if not blog:
-            response.status_code = status.HTTP_404_NOT_FOUND
-            return {"error": f"Blog with id({id}) not found, error is: {status.HTTP_404_NOT_FOUND}"}
+            raise HTTPException(status_code=404, detail="Blog not found")
+        if blog.published == False and blog.author_id != user.id and user.role != 'admin':
+            raise HTTPException(status_code=403, detail="You do not have access to this blog")
         return blog
     except SQLAlchemyError as e:
         print(f"Error getting blog: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Error getting blog")
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Error getting blog: {str(e)}")
         raise HTTPException(status_code=500, detail="Error getting blog")
@@ -161,3 +174,11 @@ def delete_blog(id: int, db: Session = Depends(get_db), user: User = Depends(get
         print(f"Error deleting blog: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Error deleting blog")
+
+
+
+#TODO: Because of the published filter make the unpublished inaccesible to others except the author and admins. published_at should be set to true.
+
+#TODO: Make the blogs have tags such as Lifestyle, Tips e.t.c
+
+#TODO: Allow for sorting by multiple attributes such as tags, names, author, most recent e.t.c

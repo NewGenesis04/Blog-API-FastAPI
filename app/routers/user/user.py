@@ -78,3 +78,8 @@ def delete_user(user: User = Depends(get_current_user), db: Session = Depends(ge
         print(f"Error updating user: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Error deleting user")
+    
+
+
+
+#TODO: Add option to add profile picture.
