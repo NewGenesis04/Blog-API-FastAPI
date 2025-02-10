@@ -15,24 +15,25 @@ router = APIRouter(dependencies= [Depends(get_current_user)], tags=['blog'])
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_blog(request: schemas.BlogCreate, user: User = Depends(role_required(['admin', 'author'])), db: Session = Depends(get_db)) -> schemas.Blog:
     try:
-       if user.role == 'admin':
-        author_id = request.author_id or user.id #Use payload id if available in request else default to current user(admin)
-                
-        author = db.query(User).filter(User.id == request.author_id).first()
+       
+        if user.role == 'admin':
+            author_id = request.author_id or user.id #Use payload id if available in request else default to current user(admin)
+                    
+            author = db.query(User).filter(User.id == request.author_id).first()
 
-        if not author:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Author with id({request.author_id}) not found"
-            )
-        
+            if not author:
+                raise HTTPException(
+                 status_code=404,
+                 detail=f"Author with id({request.author_id}) not found"
+                )
+            
         author_id = user.id
-
+        
         new_blog = Blog(title=request.title, content=request.content, published=request.published, published_at=request.published_at, author_id=author_id)
+        
         db.add(new_blog)
         db.commit()
         db.refresh(new_blog)
-
         return new_blog
     
     except SQLAlchemyError as e:
