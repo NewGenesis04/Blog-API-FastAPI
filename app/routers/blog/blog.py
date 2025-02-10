@@ -178,8 +178,6 @@ def delete_blog(id: int, db: Session = Depends(get_db), user: User = Depends(get
 
 
 
-#TODO: Because of the published filter make the unpublished inaccesible to others except the author and admins. published_at should be set to true.
-
 #TODO: Make the blogs have tags such as Lifestyle, Tips e.t.c
 
 #TODO: Allow for sorting by multiple attributes such as tags, names, author, most recent e.t.c

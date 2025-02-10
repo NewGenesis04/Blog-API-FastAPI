@@ -27,6 +27,7 @@ class Blog(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
+    tag = Column(String(255), index=True, nullable=True) 
     created_at = Column(DateTime, index=True, default=lambda: datetime.now(timezone.utc))
     published_at = Column(DateTime, index=True, default=None)
     published = Column(Boolean, index=True, default=False)
