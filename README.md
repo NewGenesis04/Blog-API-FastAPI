@@ -499,7 +499,7 @@ Delete the alembic folder and run these commands:
 alembic init
 ```
 
-Modify the alembic.ini file:
+Modify the alembic/env.py file:
 ```sh
 from dotenv import load_dotenv
 import os
