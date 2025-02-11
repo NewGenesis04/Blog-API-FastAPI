@@ -47,14 +47,9 @@ def update_user(request: schemas.UserUpdate, user: User = Depends(get_current_us
         if not current_user:
             raise HTTPException(status_code=404, detail="User not found")
         
-        if request.bio is not None:
-            current_user.bio = request.bio
-        if request.username is not None:
-            current_user.username = request.username
-        if request.email is not None:
-            current_user.email = request.email
-        if request.role is not None:
-            current_user.role = request.role
+        update_data = request.model_dump(exclude_unset=True)  # Exclude fields not provided
+        for key, value in update_data.items():
+            setattr(current_user, key, value) 
             
         db.commit()
         return {"detail": f"User with id({user.id}) has been updated"}

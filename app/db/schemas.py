@@ -1,5 +1,5 @@
 from unittest.mock import Base
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import List, Optional
 from datetime import datetime
 
@@ -17,17 +17,40 @@ class BlogBase(BaseModel):
 
 class BlogCreate(BlogBase):
     author_id: Optional[int] = None
+    tag: Optional[str] = None
+
+    @field_validator("tag")
+    @classmethod
+    def lowercase_and_validate_tag(cls, v):
+        allowed_tags = {"entertainment", "technology", "health & wellness", "lifestyle"}
+        v = v.lower() if v else v
+        if v and v not in allowed_tags:
+            raise ValueError(f"Invalid tag '{v}'. Allowed tags: {allowed_tags}")
+        return v
+    
     class Config:
         from_attributes = True
         extra = "forbid"
 
 class BlogUpdate(BaseModel): 
-    title: str
-    content: str
-    published: bool = False
+    title: Optional[str] = None
+    content: Optional[str] = None
+    published: Optional[bool] = None
+    published_at: Optional[datetime] = None
+    tag: Optional[str] = None
+
+    @field_validator("tag")
+    @classmethod
+    def lowercase_and_validate_tag(cls, v):
+        allowed_tags = {"entertainment", "technology", "health & wellness", "lifestyle"}
+        v = v.lower() if v else v
+        if v and v not in allowed_tags:
+            raise ValueError(f"Invalid tag '{v}'. Allowed tags: {allowed_tags}")
+        return v
+    
 
     class Config:
-        from_attributes = True
+        from_attributes = True 
         extra = "forbid"
 
 class BlogSummary(BaseModel):  # summarised blog response model.
@@ -35,6 +58,7 @@ class BlogSummary(BaseModel):  # summarised blog response model.
     title: str
     content: str
     author_id: int
+    tag: str
 
     class Config:
         from_attributes = True
@@ -44,6 +68,7 @@ class Blog(BlogBase):
     id: int
     author_id: Optional[int] = None
     created_at: datetime
+    tag: Optional[str] = None
 
     class Config:
         from_attributes = True  # Tells Pydantic to treat SQLAlchemy models like dicts
@@ -67,7 +92,6 @@ class UserUpdate(UserBase):
     password: Optional[str] = None
     role: Optional[str] = None
     bio: Optional[str] = None
-    pass
 
 
 class UserSummary(BaseModel):

@@ -15,7 +15,7 @@ router = APIRouter(dependencies= [Depends(get_current_user)], tags=['blog'])
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_blog(request: schemas.BlogCreate, user: User = Depends(role_required(['admin', 'author'])), db: Session = Depends(get_db)) -> schemas.Blog:
     try:
-       
+        author_id = user.id
         if user.role == 'admin':
             author_id = request.author_id or user.id #Use payload id if available in request else default to current user(admin)
                     
@@ -26,10 +26,13 @@ def create_blog(request: schemas.BlogCreate, user: User = Depends(role_required(
                  status_code=404,
                  detail=f"Author with id({request.author_id}) not found"
                 )
-            
-        author_id = user.id
         
-        new_blog = Blog(title=request.title, content=request.content, published=request.published, published_at=request.published_at, author_id=author_id)
+        new_blog = Blog(title=request.title,
+                         content=request.content,
+                           published=request.published,
+                             tag=request.tag,
+                               published_at=request.published_at,
+                                 author_id=author_id)
         
         db.add(new_blog)
         db.commit()
@@ -126,13 +129,13 @@ def update_blog(request: schemas.BlogUpdate, id: int, user: User = Depends(role_
             raise HTTPException(status_code=404, detail=f"Blog with id({id}) not found")
         if blog.author_id != user.id:
             raise HTTPException(status_code=403, detail="You are not authorized to update this blog")
-
-        blog.title = request.title
-        blog.content = request.content
-        blog.published = request.published
-        blog.author_id = user.id
+        
+        update_data = request.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(blog, key, value)
 
         db.commit()
+        db.refresh(blog)
         return {"detail": f"Blog with id({id}) has been updated"}
     
     except SQLAlchemyError as e:
@@ -176,6 +179,30 @@ def delete_blog(id: int, db: Session = Depends(get_db), user: User = Depends(get
         raise HTTPException(
             status_code=500, detail="Error deleting blog")
 
+
+@router.get('/tag/{tag}', status_code=status.HTTP_200_OK)
+def sort_by_tag(tag: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> List[schemas.BlogSummary]:
+    try:
+        query = db.query(Blog).filter(Blog.tag == tag)
+
+        if user.role != 'admin':  # Normal users should see only published blogs
+            query = query.filter(Blog.published == True)
+
+        blogs = query.all()
+
+        if not blogs:
+            raise HTTPException(status_code=404, detail="No blogs found with this tag")
+
+        return blogs
+    except SQLAlchemyError as e:
+        print(f"Error getting blog: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail="Error getting blog")
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error getting blog: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error getting blog")
 
 
 #TODO: Make the blogs have tags such as Lifestyle, Tips e.t.c

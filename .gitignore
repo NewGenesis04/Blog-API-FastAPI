@@ -28,3 +28,7 @@ htmlcov/
 # OS-specific files
 .DS_Store
 Thumbs.db
+
+#Migration config file
+alembic.ini
+alembic/
