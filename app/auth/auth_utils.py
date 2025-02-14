@@ -50,7 +50,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     try:
-        payload = verify_access_token(token) #Made sure the token is verified and 
+        payload = verify_access_token(token) 
         user_id: int = payload.get("sub")
         if not user_id:
             print("No user_id specified")

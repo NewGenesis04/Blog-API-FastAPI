@@ -99,6 +99,7 @@ class UserSummary(BaseModel):
     username: str
     email: EmailStr
     role: str
+    profile_url: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -106,6 +107,8 @@ class UserSummary(BaseModel):
 
 class User(UserBase):
     id: int
+    role: str
+    profile_url: Optional[str] = None
     blogs: List[BlogSummary] = []
 
     class Config:

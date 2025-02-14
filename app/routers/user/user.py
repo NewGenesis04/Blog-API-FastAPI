@@ -13,7 +13,7 @@ from fastapi import APIRouter
 router = APIRouter(dependencies=[Depends(get_current_user)], tags=['user'])
 
 @router.get('/all', dependencies=[Depends(role_required(['admin', 'author']))]) 
-def get_users(db: Session = Depends(get_db)) -> List[schemas.User]:
+def get_users(db: Session = Depends(get_db)) -> List[schemas.UserSummary]:
     try:
         users = db.query(User).all()
         return users
@@ -74,7 +74,5 @@ def delete_user(user: User = Depends(get_current_user), db: Session = Depends(ge
         raise HTTPException(
             status_code=500, detail="Error deleting user")
     
-
-
 
 #TODO: Add option to add profile picture.
