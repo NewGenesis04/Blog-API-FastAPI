@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Optional
@@ -6,112 +6,31 @@ from app.db.models import User, Follow
 from app.db.database import get_db
 from app.db import schemas
 from app.auth.auth_utils import get_current_user, role_required
+from app.services import FollowService
 
 router = APIRouter(dependencies= [Depends(get_current_user)], tags=['follow'])
 
+def get_follow_service(db: Session = Depends(get_db), user: User = Depends(role_required(['reader', 'author']))):
+    return FollowService(db, user)
+
 @router.post('/{userId}', status_code=status.HTTP_201_CREATED)
-def follow_user(userId, db: Session = Depends(get_db), user: User = Depends(role_required(['reader', 'author']))):
-    try:
-        user_to_follow = db.query(User).filter(User.id == userId).first()
-        if not user_to_follow:
-            raise HTTPException(
-                status_code=404, detail="User not found")
-        
-        existing_follow = db.query(Follow).filter_by(follower_id=user.id, followed_id=userId).first()
-        if existing_follow:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You are already following this user.")
-        
-        new_follow = Follow(follower_id=user.id, followed_id=userId)
-        db.add(new_follow)
-        db.commit()
-        return {"detail": f"User with id({userId}) has been followed"}
-    except HTTPException:
-        raise
-    except (SQLAlchemyError, Exception) as e:
-        db.rollback()
-        print(f"Erorr: {e}")
-        raise HTTPException(status_code=500, detail="Error following user")
-        
+def follow_user(userId, service: FollowService = Depends(get_follow_service)):
+    return service.follow_user(userId)
 
 @router.delete('/{userId}', status_code=status.HTTP_202_ACCEPTED)
-def unfollow(userId, db: Session = Depends(get_db), user: User = Depends(role_required(['reader', 'author']))):
-    try:
-        user_to_unfollow = db.query(User).filter(User.id == userId).first()
-        if not user_to_unfollow:
-            raise HTTPException(
-                status_code=404, detail="User not found")
-        
-        existing_follow = db.query(Follow).filter_by(follower_id=user.id, followed_id=userId).first()
-        if not existing_follow:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You are not following this user.")
-        
-        db.delete(existing_follow)
-        db.commit()
-        return {"detail": f"User with id({userId}) has been unfollowed"}
-    
-    except SQLAlchemyError as e:
-        db.rollback()
-        print(f"Erorr: {e}")
-        raise HTTPException(status_code=500, detail="Error unfollowing user")
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        print(f"Erorr: {e}")
-        raise HTTPException(status_code=500, detail="Error unfollowing user")
+def unfollow(userId, service: FollowService = Depends(get_follow_service)):
+    return service.unfollow_user(userId)
+
 
 @router.get('/following', status_code=status.HTTP_200_OK)
-def get_following(alt_user: Optional[int] = None, db: Session = Depends(get_db), user: User = Depends(role_required(['reader', 'author']))) -> List[schemas.UserSummary]:
-    try:
-        if alt_user:
-            following = db.query(User).join(Follow, Follow.followed_id == User.id).filter(Follow.follower_id == alt_user).all()
-        else:
-            following = db.query(User).join(Follow, Follow.followed_id == User.id).filter(Follow.follower_id == user.id).all()
-        if not following:
-            raise HTTPException(
-                status_code=404, detail="Following not found")
-        
-        return following
-    
-    except SQLAlchemyError as e:
-        db.rollback()
-        print(f"Error getting following: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail="Error getting following")
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        print(f"Error getting following: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail="Error getting following")
+def get_following(alt_user: Optional[int] = None, service: FollowService = Depends(get_follow_service)) -> List[schemas.UserSummary]:
+    return service.get_following(alt_user)
+
     
 
 @router.get('/followers', status_code=status.HTTP_200_OK)
-def get_followers(alt_user: Optional[int] = None, db: Session = Depends(get_db), user: User = Depends(role_required(['reader', 'author']))) -> List[schemas.UserSummary]:
-    try:
-        if alt_user:
-            followers = db.query(User).join(Follow, Follow.follower_id == User.id).filter(Follow.followed_id == alt_user).all()
-        else:
-            followers = db.query(User).join(Follow, Follow.follower_id == User.id).filter(Follow.followed_id == user.id).all()
-        if not followers:
-            raise HTTPException(
-                status_code=404, detail="Followers not found")
-        
-        return followers
-    
-    except SQLAlchemyError as e:
-        db.rollback()
-        print(f"Error getting followers: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail="Error getting followers")
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        print(f"Error getting followers: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail="Error getting followers")
-    
-#TODO: Change the Query to use just Optional[datatype] = None
+def get_followers(alt_user: Optional[int] = None, service: FollowService = Depends(get_follow_service)) -> List[schemas.UserSummary]:
+    return service.get_followers(alt_user)
+
+
 # *, ALLOWS YOU TO LIST PARAMS IN ANY ORDER.... So query before default params: From tomi fast api (36:52)e.t.c

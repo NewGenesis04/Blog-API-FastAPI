@@ -205,6 +205,4 @@ def sort_by_tag(tag: str, user: User = Depends(get_current_user), db: Session = 
         raise HTTPException(status_code=500, detail="Error getting blog")
 
 
-#TODO: Make the blogs have tags such as Lifestyle, Tips e.t.c
-
 #TODO: Allow for sorting by multiple attributes such as tags, names, author, most recent e.t.c
