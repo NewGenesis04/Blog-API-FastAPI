@@ -26,8 +26,6 @@ def unfollow(userId, service: FollowService = Depends(get_follow_service)):
 def get_following(alt_user: Optional[int] = None, service: FollowService = Depends(get_follow_service)) -> List[schemas.UserSummary]:
     return service.get_following(alt_user)
 
-    
-
 @router.get('/followers', status_code=status.HTTP_200_OK)
 def get_followers(alt_user: Optional[int] = None, service: FollowService = Depends(get_follow_service)) -> List[schemas.UserSummary]:
     return service.get_followers(alt_user)

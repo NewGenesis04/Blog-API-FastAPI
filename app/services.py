@@ -6,12 +6,16 @@ from app.db import schemas
 from typing import List, Optional
 from app.db.database import get_db
 from app.auth.auth_utils import get_current_user, role_required
+from app.routers.comments.coments import delete_comment
 
 
-class FollowService:
+class BaseService:
     def __init__(self, db: Session, current_user: User):
         self.db = db
         self.current_user = current_user
+
+
+class FollowService(BaseService):
 
     def follow_user(self, user_id: int):
         try:
@@ -110,10 +114,7 @@ class FollowService:
                     status_code=500, detail="Error getting followers")
 
 
-class UserService:
-    def __init__(self, db: Session, current_user: User):
-        self.db = db
-        self.current_user = current_user
+class UserService(BaseService):
 
     def get_users(self) -> List[schemas.UserSummary]: 
         try:
@@ -125,14 +126,14 @@ class UserService:
             raise HTTPException(
             status_code=500, detail="Error fetching users")
 
-    def get_user_by_id(self, alt_id: Optional[int] = None) -> schemas.User:
+    def get_user_by_id(self, altId: Optional[int] = None) -> schemas.User:
         try:
-            if alt_id:
-                user = self.db.query(User).filter(User.id == alt_id).first()
+            if altId:
+                user = self.db.query(User).filter(User.id == altId).first()
             else:
-                user = self.db.query(User).filter(User.id == self.current_user.id).first()
+                user = self.current_user
             if not user:
-                raise HTTPException(status_code=404, detail=f"User with id {alt_id} not found")
+                raise HTTPException(status_code=404, detail=f"User with id {altId} not found")
             return user
         except (SQLAlchemyError, Exception) as e:
             self.db.rollback()
@@ -169,9 +170,284 @@ class UserService:
             raise HTTPException(
                 status_code=500, detail="Error deleting user")    
     
-
-class BlogService:
-    def __init__(self, db: Session, current_user: User):
-        self.db = db
-        self.current_user = current_user
     
+class BlogService(BaseService):
+
+    def create_blog(self, request: schemas.BlogCreate) -> schemas.Blog:
+        try:
+            author_id = self.current_user.id
+            if self.current_user.role == 'admin':
+                author_id = request.author_id or self.current_user.id #Use payload id if available in request else default to current user(admin)
+                        
+                author = self.db.query(User).filter(User.id == request.author_id).first()
+
+                if not author:
+                    raise HTTPException(
+                    status_code=404,
+                    detail=f"Author with id({request.author_id}) not found"
+                    )
+            
+            new_blog = Blog(title=request.title,
+                            content=request.content,
+                            published=request.published,
+                                tag=request.tag,
+                                published_at=request.published_at,
+                                    author_id=author_id)
+            
+            self.db.add(new_blog)
+            self.db.commit()
+            self.db.refresh(new_blog)
+            return new_blog
+        
+        except SQLAlchemyError as e:
+            print(f"Error creating blog: {str(e)}")
+            raise HTTPException(
+                status_code=500, detail="Error creating blog")
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"Error creating blog: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error creating blog")
+        
+    def get_all_blogs(self, user_id: Optional[int] = None) -> List[schemas.Blog]:
+        try:
+            query = self.db.query(Blog)
+            
+            if self.current_user.role == 'admin':
+                if user_id:
+                    query = query.filter(Blog.author_id == user_id)
+            else:
+                if user_id:
+                    query = query.filter(Blog.author_id == user_id, Blog.published == True)
+                else:
+                    query = query.filter(Blog.published == True)
+            
+            blogs = query.all()
+
+            if not blogs:
+                raise HTTPException(status_code=404, detail="Blogs not found")
+
+            return blogs
+        except HTTPException:
+            raise
+        except SQLAlchemyError as e:
+            print(f"Error getting blogs: {str(e)}")
+            raise HTTPException(
+                status_code=500, detail="Error retrieving blogs")
+        except Exception as e:
+            print(f"Error getting blogs: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error retrieving blogs")
+
+    def get_current_user_blogs(self):
+            try:
+                blog = self.db.query(Blog).filter(Blog.author_id == self.current_user.id).first()
+                if not blog:
+                    raise HTTPException(status_code=404, detail="No blogs found for this user")
+                
+                return blog
+            
+            except SQLAlchemyError as e:
+                print(f"Error getting blog: {str(e)}")
+                raise HTTPException(
+                        status_code=500, detail="Error getting blog")
+            except Exception as e:
+                print(f"Error getting blog: {str(e)}")
+                raise HTTPException(status_code=500, detail="Error getting blog")
+            
+    def get_blog_by_id(self, id: int):
+            try:
+                blog = self.db.query(Blog).filter(Blog.id == id).first()
+                if not blog:
+                    raise HTTPException(status_code=404, detail="Blog not found")
+                if blog.published == False and blog.author_id != self.current_user.id and self.current_user.role != 'admin':
+                    raise HTTPException(status_code=403, detail="You do not have access to this blog")
+                return blog
+            except SQLAlchemyError as e:
+                print(f"Error getting blog: {str(e)}")
+                raise HTTPException(
+                    status_code=500, detail="Error getting blog")
+            except HTTPException:
+                raise
+            except Exception as e:
+                print(f"Error getting blog: {str(e)}")
+                raise HTTPException(status_code=500, detail="Error getting blog")
+    
+    def update_blog(self, request: schemas.BlogUpdate, id: int):
+        try:
+            blog = self.db.query(Blog).filter(Blog.id == id).first()
+
+            if not blog:
+                raise HTTPException(status_code=404, detail=f"Blog with id({id}) not found")
+            if blog.author_id != self.current_user.id:
+                raise HTTPException(status_code=403, detail="You are not authorized to update this blog")
+            
+            update_data = request.model_dump(exclude_unset=True)
+            for key, value in update_data.items():
+                setattr(blog, key, value)
+
+            self.db.commit()
+            self.db.refresh(blog)
+            return {"detail": f"Blog with id({id}) has been updated"}
+        
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            print(f"Error updating blog: {str(e)}")
+            raise HTTPException(
+                status_code=500, detail="Error updating blog")
+        except HTTPException:
+            raise
+        except Exception as e:
+            self.db.rollback()
+            print(f"Error updating blog: {str(e)}")
+            raise HTTPException(
+                status_code=500, detail="Error updating blog")
+    
+    def delete_blog(self, id: int):
+        try:
+            blog = self.db.query(Blog).filter(Blog.id ==  id).first()
+            if not blog:
+                raise HTTPException(status_code=404, detail="Blog not found")
+            if self.current_user.role == 'author' and blog.author_id != self.current_user.id:
+                raise HTTPException(status_code=403, detail="You are not authorized to delete this blog")
+            
+            self.db.delete(blog)
+            self.db.commit()
+            return {"detail": f"Blog with id({id}) deleted"}
+        
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            print(f"Error deleting blog: {str(e)}")
+            raise HTTPException(
+                status_code=500, detail="Error deleting blog")
+        except HTTPException:
+            # Without this the exceptions above were defaulting to the generic exception handler below
+            raise
+        except Exception as e:
+            self.db.rollback()
+            print(f"Error deleting blog: {str(e)}")
+            raise HTTPException(
+                status_code=500, detail="Error deleting blog")
+        
+    def sort_by_tag(self, tag:str) -> List[schemas.BlogSummary]:
+        try:
+            query = self.db.query(Blog).filter(Blog.tag == tag)
+
+            if self.current_user.role != 'admin':  # Normal users should see only published blogs
+                query = query.filter(Blog.published == True)
+
+            blogs = query.all()
+
+            if not blogs:
+                raise HTTPException(status_code=404, detail="No blogs found with this tag")
+
+            return blogs
+        except SQLAlchemyError as e:
+            print(f"Error getting blog: {str(e)}")
+            raise HTTPException(
+                status_code=500, detail="Error getting blog")
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"Error getting blog: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error getting blog")
+
+
+class CommentService(BaseService):
+    
+    def comment_on_blog(self, request: schemas.CreateComment, blog_id) -> schemas.CreateComment:
+            try:
+                
+                blog = self.db.query(Blog).filter(Blog.id == blog_id).first()
+                if not blog:
+                    raise HTTPException(
+                        status_code=404, detail="Blog not found")
+                
+                new_comment = Comment(author_id=self.current_user.id, blog_id=blog_id, content= request.content)
+
+                self.db.add(new_comment)
+                self.db.commit()
+                self.db.refresh(new_comment)
+
+                return new_comment
+            
+            except SQLAlchemyError as e:
+                print(f"Error creating comment: {str(e)}")
+                raise HTTPException(
+                    status_code=500, detail="Error creating comment")
+            except HTTPException:
+                raise
+            except Exception as e:
+                print(f"Error creating comment: {str(e)}")
+                raise HTTPException(
+                    status_code=500, detail="Error creating comment") 
+    
+    def get_comments(self, author_id: int, blog_id: int, include_all: Optional[bool] = None):
+            try:
+                if author_id:
+                    comments = self.db.query(Comment).filter(Comment.blog_id == blog_id, Comment.author_id == author_id).all()
+                elif include_all is True:
+                    comments = self.db.query(Comment).filter(Comment.blog_id == blog_id).all()
+                else:
+                    comments = self.db.query(Comment).filter(Comment.blog_id == blog_id, Comment.author_id == self.current_user.id).all()
+                
+                if not comments:
+                    raise HTTPException(status_code=404, detail="No comments found")
+                
+                return comments
+                
+            except SQLAlchemyError as e:
+                print(f"Error getting comments: {str(e)}")
+                raise HTTPException(status_code=500, detail="Error getting comments")
+            except HTTPException:
+                raise
+            except Exception as e:
+                print(f"Error getting comments: {str(e)}")
+                raise HTTPException(status_code=500, detail="Error getting comments")
+            
+    def update_comment(self, request: schemas.CommentUpdate, comment_id)  -> schemas.CommentUpdate:
+            try:
+                comment = self.db.query(Comment).filter(Comment.id == comment_id).first()
+                if not comment:
+                    raise HTTPException(status_code=404, detail="No comment found")
+                if comment.author_id != self.current_user.id:
+                    raise HTTPException(status_code=403, detail="You are not authorized to update this comment")
+                
+                comment.content = request.content
+                self.db.commit()
+                self.db.refresh(comment)
+                return comment
+            
+            except SQLAlchemyError as e:
+                self.db.rollback()
+                print(f"Error updating comments: {str(e)}")
+                raise HTTPException(status_code=500, detail="Error updating comment")
+            except HTTPException:
+                raise
+            except Exception as e:
+                self.db.rollback()
+                print(f"Error updating comments: {str(e)}")
+                raise HTTPException(status_code=500, detail="Error updating comment")
+    
+    def delete_comment(self, comment_id: int):
+            try:
+                comment = self.db.query(Comment).filter(Comment.id == comment_id).first()
+                if not comment:
+                    raise HTTPException(status_code=404, detail="Comment not found")
+                if comment.author_id != self.current_user.id:
+                    raise HTTPException(status_code=403, detail="You are not authorized to delete this comment")
+                
+                self.db.delete(comment)
+                self.db.commit()
+
+                return {"detail": f"Comment with id({comment_id}) has been deleted"}
+            
+            except SQLAlchemyError as e:
+                self.db.rollback()
+                print(f"Error deleting comment: {str(e)}")
+                raise HTTPException(status_code=500, detail="Error deleting comment")
+            except HTTPException:
+                raise
+            except Exception as e:
+                self.db.rollback()
+                print(f"Error deleting comment: {str(e)}")
+                raise HTTPException(status_code=500, detail="Error deleting comment")

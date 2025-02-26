@@ -4,6 +4,10 @@ from typing import List, Optional
 from datetime import datetime
 
 
+class AuthPasswordUpdate(BaseModel):
+    old_password: str
+    new_password: str
+
 # Pydantic Schema for Blog
 class BlogBase(BaseModel):
     title: str
@@ -58,7 +62,7 @@ class BlogSummary(BaseModel):  # summarised blog response model.
     title: str
     content: str
     author_id: int
-    tag: str
+    tag: Optional[str]
 
     class Config:
         from_attributes = True
@@ -88,8 +92,9 @@ class UserCreate(UserBase):
     password: str
     role: Optional[str] = "author"
 
-class UserUpdate(UserBase):
-    password: Optional[str] = None
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
     role: Optional[str] = None
     bio: Optional[str] = None
 
