@@ -10,8 +10,8 @@ class Settings:
     PROJECT_NAME: str = "Blog App"
     PROJECT_VERSION: str = "1.0.0"
 
-    DATABASE_URI: str = os.getenv(
-        "DATABASE_URI",
+    DATABASE_URL: str = os.getenv(
+        "DATABASE_URL",
         "mysql+pymysql://root:parzival03@localhost/blog"
     )
     SECRET_KEY: str = os.getenv("SECRET_KEY", "blog_secret_key_1@1")
