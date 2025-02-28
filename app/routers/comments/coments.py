@@ -1,9 +1,8 @@
 from email.policy import HTTP
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Optional
-from app.db.models import User, Blog, Comment
+from app.db.models import User
 from app.db.database import get_db
 from app.db import schemas
 from app.auth.auth_utils import get_current_user
@@ -25,7 +24,6 @@ def get_comments(blog_id: int, include_all: Optional[bool] = False, author_id: O
 @router.put('/{comment_id}', status_code=status.HTTP_202_ACCEPTED)
 def update_comment(comment_id: int, request: schemas.CommentUpdate, service: CommentService = Depends(get_comment_service)) -> schemas.CommentUpdate:
     return service.update_comment(comment_id, request)
-
 
 @router.delete('/{comment_id}', status_code=status.HTTP_202_ACCEPTED)
 def delete_comment(comment_id: int, service: CommentService = Depends(get_comment_service)):
