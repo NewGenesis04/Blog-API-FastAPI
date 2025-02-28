@@ -1,3 +1,4 @@
+
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi import HTTPException, Depends, status
@@ -6,7 +7,6 @@ from app.db import schemas
 from typing import List, Optional
 from app.db.database import get_db
 from app.auth.auth_utils import get_current_user, role_required
-from app.routers.comments.coments import delete_comment
 
 
 class BaseService:
