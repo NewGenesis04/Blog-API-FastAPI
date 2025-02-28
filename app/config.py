@@ -12,7 +12,6 @@ class Settings:
 
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL",
-        "mysql+pymysql://root:parzival03@localhost/blog"
     )
     SECRET_KEY: str = os.getenv("SECRET_KEY", "blog_secret_key_1@1")
 
