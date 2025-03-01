@@ -55,6 +55,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         if not user_id:
             print("No user_id specified")
             raise HTTPException(status_code=401, detail="Invalid token")
+        user_id = int(user_id)
         current_user = filter_user(db, User.id == user_id).first()
         if not current_user:
             print("No user found in database")
