@@ -14,11 +14,11 @@ def get_follow_service(db: Session = Depends(get_db), user: User = Depends(role_
     return FollowService(db, user)
 
 @router.post('/{userId}', status_code=status.HTTP_201_CREATED)
-def follow_user(userId, service: FollowService = Depends(get_follow_service)):
+def follow_user(userId: int, service: FollowService = Depends(get_follow_service)):
     return service.follow_user(userId)
 
 @router.delete('/{userId}', status_code=status.HTTP_202_ACCEPTED)
-def unfollow(userId, service: FollowService = Depends(get_follow_service)):
+def unfollow(userId: int, service: FollowService = Depends(get_follow_service)):
     return service.unfollow_user(userId)
 
 
