@@ -9,7 +9,7 @@ load_dotenv(dotenv_path=env_path)
 class Settings:
     PROJECT_NAME: str = "Blog App"
     PROJECT_VERSION: str = "1.0.0"
-
+    PROJECT_DESCRIPTION: str = "This project is a FastAPI-based blog management system that provides a robust and scalable backend for handling blogs, users, comments, and follow relationships. Built with performance and security in mind, it offers a seamless experience for user authentication, role-based access control, and efficient content management."
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL",
     )

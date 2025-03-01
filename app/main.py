@@ -10,9 +10,10 @@ import os
 import cloudinary
 from dotenv import load_dotenv
 from pathlib import Path
+from app.config import settings
 # models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(title=settings.PROJECT_NAME, version=settings.PROJECT_VERSION, description=settings.PROJECT_DESCRIPTION)
 
 app.mount("/static", StaticFiles(directory="static"), name="/static")
 

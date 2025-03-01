@@ -1,4 +1,3 @@
-
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi import HTTPException, Depends, status
