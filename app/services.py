@@ -239,7 +239,7 @@ class BlogService(BaseService):
 
     def get_current_user_blogs(self):
             try:
-                blog = self.db.query(Blog).filter(Blog.author_id == self.current_user.id).first()
+                blog = self.db.query(Blog).filter(Blog.author_id == self.current_user.id).all()
                 if not blog:
                     raise HTTPException(status_code=404, detail="No blogs found for this user")
                 
