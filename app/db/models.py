@@ -65,3 +65,9 @@ class Comment(Base):
 
     def __repr__(self):
         return f"<Comment(id={self.id}, author_id={self.author_id}, content={self.content})>"
+    
+class RevokedToken(Base):
+    __tablename__= 'revoked_tokens'
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String(255), nullable=False, index=True, unique=True)
+    expires = Column(DateTime, nullable=False)
