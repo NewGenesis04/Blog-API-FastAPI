@@ -1,13 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException
+from datetime import timedelta
+import re
+from fastapi import APIRouter, Depends, HTTPException, Header
 from fastapi.security import OAuth2PasswordRequestForm
+from httpx import get
+from jose import JWTError, ExpiredSignatureError
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from app.utils import filter_user
 from app.db.database import get_db
-from app.db.models import User
+from app.db.models import User, RevokedToken
 from app.db import schemas
 
-from app.auth.auth_utils import hash_password, verify_password, create_access_token, get_current_user, authenticate_user
+from app.auth.auth_utils import hash_password, verify_password, create_token, get_current_user, authenticate_user, revoke_token
 
 router = APIRouter(tags=['auth'])
 
@@ -16,8 +20,9 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=401, detail="Incorrect username/email or password")
-    access_token = create_access_token(data={"sub": str(user.id)})
-    return {"access_token": access_token, "token_type":"bearer"}
+    access_token = create_token(data={"sub": str(user.id)}, expires_delta=timedelta(minutes=5))
+    refresh_token = create_token(data={"sub": str(user.id)}, expires_delta=timedelta(minutes=10))
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type":"bearer"}
 
 
 @router.post('/register')
@@ -57,3 +62,41 @@ def update_password(request: schemas.AuthPasswordUpdate, db: Session = Depends(g
         db.rollback()
         print(f"Error updating password: {str(e)}")
         raise HTTPException(status_code=500, detail="Error updating password")
+    
+@router.post("/logout")
+def logout(refresh_token: str= Header(...), db: Session = Depends(get_db)):
+    try:
+        # Revoke it
+        revoked = revoke_token(refresh_token=refresh_token, db=db)
+
+        db.add(revoked)
+        db.commit()
+        return {"detail": "Refresh token revoked, user logged out succesfully"}
+    
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Refresh token already expired")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+    
+@router.post("/refresh")
+def refresh_token(refresh_token: str= Header(...), db: Session = Depends(get_db)):
+    try:
+        user = get_current_user(refresh_token)
+
+        if db.query(RevokedToken).filter(RevokedToken.token == refresh_token).first():
+            raise HTTPException(status_code=401, detail="Refresh token revoked")
+        
+        access_token = create_token({"sub": str(user.id)}, timedelta(minutes=5))
+        return {"access_token": access_token, "token_type": "bearer"}
+    
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Refresh token expired")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    
+
+
+
+#TODO: Implement cookie-based auth flow for tokens
+    

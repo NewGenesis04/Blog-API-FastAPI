@@ -7,7 +7,7 @@ from app.utils import filter_user
 from app.config import settings
 from typing import List
 from app.db.database import get_db
-from app.db.models import User
+from app.db.models import User, RevokedToken
 from sqlalchemy.orm import Session
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -37,7 +37,7 @@ def authenticate_user(db: Session, identifier: str, password: str):
         return False
     return user
 
-def create_access_token(data: dict, expires_delta: timedelta = None):
+def create_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -46,6 +46,18 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
             timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
+
+def revoke_token(refresh_token: str, db):
+        payload = jwt.decode(refresh_token, settings.JWT_SECRET_KEY, algorithm=[settings.JWT_ALGORITHM])
+        expires_at = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
+        
+        # Check if already revoked
+        if db.query(RevokedToken).filter(RevokedToken.token == refresh_token).first():
+            raise HTTPException(status_code=400, detail="Token already revoked")
+        
+        # Revoke it
+        return RevokedToken(token=refresh_token, expires_at=expires_at)
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
