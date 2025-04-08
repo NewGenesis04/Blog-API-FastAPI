@@ -11,6 +11,7 @@ import cloudinary
 from dotenv import load_dotenv
 from pathlib import Path
 from app.config import settings
+from fastapi.middleware.cors import CORSMiddleware
 # models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title=settings.PROJECT_NAME, version=settings.PROJECT_VERSION, description=settings.PROJECT_DESCRIPTION)
@@ -23,6 +24,18 @@ app.include_router(user_router, prefix="/user", tags=["user"])
 app.include_router(follow_router, prefix="/follow", tags=["follow"])
 app.include_router(comments_router, prefix="/comments")
 app.include_router(files_router, prefix="/files", tags=["files"])
+
+origins = [
+    "http://localhost"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],  
+    allow_headers=["*"]
+)
 
 env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
