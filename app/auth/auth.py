@@ -2,7 +2,6 @@ from datetime import timedelta
 import re
 from fastapi import APIRouter, Depends, HTTPException, Header
 from fastapi.security import OAuth2PasswordRequestForm
-from httpx import get
 from jose import JWTError, ExpiredSignatureError
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -19,9 +18,9 @@ router = APIRouter(tags=['auth'])
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
-        raise HTTPException(status_code=401, detail="Incorrect username/email or password")
+        raise HTTPException(status_code=400, detail="Incorrect username/email or password")
     access_token = create_token(data={"sub": str(user.id)}, expires_delta=timedelta(minutes=5))
-    refresh_token = create_token(data={"sub": str(user.id)}, expires_delta=timedelta(minutes=10))
+    refresh_token = create_token(data={"sub": str(user.id)}, expires_delta=timedelta(days=7))
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type":"bearer"}
 
 
