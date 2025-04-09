@@ -26,7 +26,8 @@ app.include_router(comments_router, prefix="/comments")
 app.include_router(files_router, prefix="/files", tags=["files"])
 
 origins = [
-    "http://localhost"
+    "http://localhost:3000",
+    "https://localhost:3000"
 ]
 
 app.add_middleware(
