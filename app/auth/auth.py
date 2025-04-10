@@ -1,7 +1,5 @@
 from datetime import timedelta
-import re
 from fastapi import APIRouter, Depends, HTTPException, Header
-from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError, ExpiredSignatureError
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -10,19 +8,37 @@ from app.db.database import get_db
 from app.db.models import User, RevokedToken
 from app.db import schemas
 
-from app.auth.auth_utils import hash_password, verify_password, create_token, get_current_user, authenticate_user, revoke_token
+from app.auth.auth_utils import hash_password, verify_access_token, verify_password, create_token, get_current_user, authenticate_user, revoke_token
 
 router = APIRouter(tags=['auth'])
 
+# @router.post('/login')
+# def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+#     user = authenticate_user(db, form_data.username, form_data.password)
+#     if not user:
+#         raise HTTPException(status_code=400, detail="Incorrect username/email or password")
+#     access_token = create_token(data={"sub": str(user.id)}, expires_delta=timedelta(minutes=5))
+#     refresh_token = create_token(data={"sub": str(user.id)}, expires_delta=timedelta(days=7))
+#     return {"access_token": access_token, "refresh_token": refresh_token, "token_type":"bearer"}
+
+
 @router.post('/login')
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = authenticate_user(db, form_data.username, form_data.password)
+def login(request: schemas.AuthLogin, db: Session = Depends(get_db)):
+    user = authenticate_user(db, request.identifier, request.password)
     if not user:
-        raise HTTPException(status_code=400, detail="Incorrect username/email or password")
+       raise HTTPException(status_code=400, detail="Incorrect username/email or password")
     access_token = create_token(data={"sub": str(user.id)}, expires_delta=timedelta(minutes=5))
     refresh_token = create_token(data={"sub": str(user.id)}, expires_delta=timedelta(days=7))
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type":"bearer"}
 
+@router.get("/me")
+def get_me(user: User = Depends(get_current_user)):
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "role": user.role,
+    }
 
 @router.post('/register')
 def register_user(request: schemas.UserCreate, db: Session = Depends(get_db)) -> schemas.UserSummary:
@@ -81,7 +97,7 @@ def logout(refresh_token: str= Header(...), db: Session = Depends(get_db)):
 @router.post("/refresh")
 def refresh_token(refresh_token: str= Header(...), db: Session = Depends(get_db)):
     try:
-        user = get_current_user(refresh_token)
+        user = verify_access_token(refresh_token)
 
         if db.query(RevokedToken).filter(RevokedToken.token == refresh_token).first():
             raise HTTPException(status_code=401, detail="Refresh token revoked")

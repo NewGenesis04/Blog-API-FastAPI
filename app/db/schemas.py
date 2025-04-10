@@ -7,6 +7,10 @@ class AuthPasswordUpdate(BaseModel):
     old_password: str
     new_password: str
 
+class AuthLogin(BaseModel):
+    identifier: str  # username or email
+    password: str
+
 # Pydantic Schema for Blog
 class BlogBase(BaseModel):
     title: str
