@@ -9,7 +9,7 @@ from app.auth.auth_utils import get_current_user, role_required
 
 
 class BaseService:
-    def __init__(self, db: Session, current_user: User):
+    def __init__(self, db: Session, current_user: Optional[User]):
         self.db = db
         self.current_user = current_user
 
@@ -211,22 +211,26 @@ class BlogService(BaseService):
     def get_all_blogs(self, user_id: Optional[int] = None) -> List[schemas.Blog]:
         try:
             query = self.db.query(Blog)
-            
-            if self.current_user.role == 'admin':
+
+            if self.current_user is None:
+                query = query.filter(Blog.published == True)
+
+            elif self.current_user.role == "admin":
                 if user_id:
                     query = query.filter(Blog.author_id == user_id)
-            else:
+
+            else:  #authenticated but not admin
+                query = query.filter(Blog.published == True)
                 if user_id:
-                    query = query.filter(Blog.author_id == user_id, Blog.published == True)
-                else:
-                    query = query.filter(Blog.published == True)
-            
+                    query = query.filter(Blog.author_id == user_id)
+
             blogs = query.all()
 
             if not blogs:
                 raise HTTPException(status_code=404, detail="Blogs not found")
 
             return blogs
+
         except HTTPException:
             raise
         except SQLAlchemyError as e:
@@ -256,6 +260,13 @@ class BlogService(BaseService):
     def get_blog_by_id(self, id: int):
             try:
                 blog = self.db.query(Blog).filter(Blog.id == id).first()
+
+                if self.current_user is None:
+                    if blog.published:
+                        return blog
+                    else:
+                        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You do not have access to this blog")
+                    
                 if not blog:
                     raise HTTPException(status_code=404, detail="Blog not found")
                 if blog.published == False and blog.author_id != self.current_user.id and self.current_user.role != 'admin':
@@ -450,3 +461,6 @@ class CommentService(BaseService):
                 self.db.rollback()
                 print(f"Error deleting comment: {str(e)}")
                 raise HTTPException(status_code=500, detail="Error deleting comment")
+            
+
+#TODO: Complete the switch to unprotected/protected routes
