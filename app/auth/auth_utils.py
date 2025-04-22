@@ -6,6 +6,7 @@ from jose import JWTError, jwt
 from app.utils import filter_user
 from app.config import settings
 from typing import List
+from app.db import schemas
 from app.db.database import get_db
 from app.db.models import User, RevokedToken
 from sqlalchemy.orm import Session
@@ -60,7 +61,7 @@ def revoke_token(refresh_token: str, db) -> RevokedToken:
         return RevokedToken(token=refresh_token, expires_at=expires_at)
 
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> schemas.User:
     try:
         payload = verify_access_token(token) 
         user_id: int = payload.get("sub")
@@ -73,13 +74,13 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
             print("No user found in database")
             raise HTTPException(status_code=401, detail="User not found")
         
-        return current_user
+        return schemas.User.model_validate(current_user)
     except JWTError as e:
         print(f"JWT Error: {e}")
         raise HTTPException(status_code=401, detail="Invalid token")
 
 def role_required(allowed_roles: List[str]):
-    def role_check(user: User = Depends(get_current_user)):
+    def role_check(user: schemas.User = Depends(get_current_user)):
         if user.role not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
