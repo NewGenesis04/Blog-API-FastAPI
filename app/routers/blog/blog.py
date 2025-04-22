@@ -7,17 +7,17 @@ from app.db import schemas
 from app.services import BlogService
 from app.auth.auth_utils import get_current_user, role_required
 
-router = APIRouter(tags=['blog'])
+router = APIRouter(dependencies= [Depends(get_current_user)], tags=['blog'])
 
-def get_blog_service(require_user: bool = True):
+def get_blog_service(require_user: bool = False):
+    """Factory to enforce (or skip) auth dynamically per route."""
     def _get_service(
         db: Session = Depends(get_db),
-        current_user: Optional[User] = Depends(get_current_user) if require_user else None,
+        current_user: Optional[schemas.User] = Depends(get_current_user) if require_user else None,
     ):
         if require_user and current_user is None:
-            raise HTTPException(status_code=401, detail="Authentication required")
-        return BlogService(db, current_user)
-    
+            raise HTTPException(401, "Authentication required")
+        return BlogService(db, current_user)  # Passes user=None if not required
     return _get_service
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
@@ -25,7 +25,7 @@ def create_blog(request: schemas.BlogCreate, service: BlogService = Depends(get_
     return service.create_blog(request)
 
 @router.get('/', status_code=status.HTTP_200_OK)
-def get_all_blogs(user_id: Optional[int] = None, service: BlogService = Depends(get_blog_service(False))) -> List[schemas.Blog]:
+def get_all_blogs(user_id: Optional[int] = None, service: BlogService = Depends(get_blog_service(True))) -> List[schemas.Blog]:
     return service.get_all_blogs(user_id)
   
     
