@@ -11,7 +11,7 @@ router = APIRouter(dependencies= [Depends(get_current_user)], tags=['blog'])
 
 def get_blog_service(require_user: bool = False):
     """Factory to enforce (or skip) auth dynamically per route."""
-    def _get_service(
+    def _get_service(                                                
         db: Session = Depends(get_db),
         current_user: Optional[schemas.User] = Depends(get_current_user) if require_user else None,
     ):

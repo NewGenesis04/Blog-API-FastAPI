@@ -10,24 +10,32 @@ from app.services import FollowService
 
 router = APIRouter(dependencies= [Depends(get_current_user)], tags=['follow'])
 
-def get_follow_service(db: Session = Depends(get_db), user: User = Depends(role_required(['reader', 'author']))):
-    return FollowService(db, user)
+def get_follow_service(require_user: bool = False):
+    """Factory to enforce (or skip) auth dynamically per route."""
+    def _get_service(                                                
+        db: Session = Depends(get_db),
+        current_user: Optional[schemas.User] = Depends(get_current_user) if require_user else None,
+    ):
+        if require_user and current_user is None:
+            raise HTTPException(401, "Authentication required")
+        return FollowService(db, current_user)
+    return _get_service
 
 @router.post('/{userId}', status_code=status.HTTP_201_CREATED)
-def follow_user(userId: int, service: FollowService = Depends(get_follow_service)):
+def follow_user(userId: int, service: FollowService = Depends(get_follow_service(True))):
     return service.follow_user(userId)
 
 @router.delete('/{userId}', status_code=status.HTTP_202_ACCEPTED)
-def unfollow(userId: int, service: FollowService = Depends(get_follow_service)):
+def unfollow(userId: int, service: FollowService = Depends(get_follow_service(True))):
     return service.unfollow_user(userId)
 
 
 @router.get('/following', status_code=status.HTTP_200_OK)
-def get_following(alt_user: Optional[int] = None, service: FollowService = Depends(get_follow_service)) -> List[schemas.UserSummary]:
+def get_following(alt_user: Optional[int] = None, service: FollowService = Depends(get_follow_service(True))) -> List[schemas.UserSummary]:
     return service.get_following(alt_user)
 
 @router.get('/followers', status_code=status.HTTP_200_OK)
-def get_followers(alt_user: Optional[int] = None, service: FollowService = Depends(get_follow_service)) -> List[schemas.UserSummary]:
+def get_followers(alt_user: Optional[int] = None, service: FollowService = Depends(get_follow_service(True))) -> List[schemas.UserSummary]:
     return service.get_followers(alt_user)
 
 
