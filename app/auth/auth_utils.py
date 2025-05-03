@@ -49,7 +49,7 @@ def create_token(data: dict, expires_delta: timedelta = None):
     return jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 
-def revoke_token(refresh_token: str, db) -> RevokedToken:
+def revoke_token(db, refresh_token: str =Depends(oauth2_scheme)) -> RevokedToken:
         payload = jwt.decode(refresh_token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
         expires_at = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
         

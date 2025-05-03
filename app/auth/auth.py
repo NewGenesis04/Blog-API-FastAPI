@@ -8,7 +8,8 @@ from app.db.database import get_db
 from app.db.models import User, RevokedToken
 from app.db import schemas
 
-from app.auth.auth_utils import hash_password, verify_access_token, verify_password, create_token, get_current_user, authenticate_user, revoke_token
+from app.auth.auth_utils import hash_password, verify_access_token, verify_password, get_current_user
+from app.auth.auth_utils import oauth2_scheme, create_token, authenticate_user, revoke_token
 
 router = APIRouter(tags=['auth'])
 
@@ -79,7 +80,7 @@ def update_password(request: schemas.AuthPasswordUpdate, db: Session = Depends(g
         raise HTTPException(status_code=500, detail="Error updating password")
     
 @router.post("/logout")
-def logout(refresh_token: str= Header(...), db: Session = Depends(get_db)):
+def logout(refresh_token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     try:
         # Revoke it
         revoked = revoke_token(refresh_token=refresh_token, db=db)
@@ -95,14 +96,14 @@ def logout(refresh_token: str= Header(...), db: Session = Depends(get_db)):
 
     
 @router.post("/refresh")
-def refresh_token(refresh_token: str= Header(...), db: Session = Depends(get_db)):
+def refresh_token(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     try:
-        user = verify_access_token(refresh_token)
+        user = verify_access_token(token)
 
-        if db.query(RevokedToken).filter(RevokedToken.token == refresh_token).first():
+        if db.query(RevokedToken).filter(RevokedToken.token == token).first():
             raise HTTPException(status_code=401, detail="Refresh token revoked")
         
-        access_token = create_token({"sub": str(user.id)}, timedelta(minutes=5))
+        access_token = create_token({"sub": str(user.get('sub'))}, timedelta(minutes=5))
         return {"access_token": access_token, "token_type": "bearer"}
     
     except ExpiredSignatureError:
