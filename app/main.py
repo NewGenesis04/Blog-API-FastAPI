@@ -12,7 +12,17 @@ from dotenv import load_dotenv
 from pathlib import Path
 from app.config import settings
 from fastapi.middleware.cors import CORSMiddleware
+from app.logging_config import setup_logging
+import logging
 # models.Base.metadata.create_all(bind=engine)
+
+try:
+    setup_logging()
+    logger = logging.getLogger(__name__)
+    logger.info("FastAPI application is starting...")
+except Exception as e:
+    print(f"Failed to set up logging: {e}")
+    raise
 
 app = FastAPI(title=settings.PROJECT_NAME, version=settings.PROJECT_VERSION, description=settings.PROJECT_DESCRIPTION)
 
@@ -27,7 +37,9 @@ app.include_router(files_router, prefix="/files", tags=["files"])
 
 origins = [
     "http://localhost:3000",
-    "https://localhost:3000"
+    "https://localhost:3000",
+    "http://localhost:8000",
+    "https://localhost:8000"
 ]
 
 app.add_middleware(
@@ -38,6 +50,7 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+logger.info("Loading environment variables...")
 env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
 
@@ -50,4 +63,5 @@ cloudinary.config(
 
 @app.get('/')
 def index():
+    logger.info("Root endpoint accessed")
     return {"message": "Welcome to the blog app"}

@@ -1,3 +1,4 @@
+import logging
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi import HTTPException, Depends, status
@@ -7,6 +8,8 @@ from typing import List, Optional
 from app.db.database import get_db
 from app.auth.auth_utils import get_current_user, role_required
 
+# Initialize logger
+logger = logging.getLogger(__name__)
 
 class BaseService:
     def __init__(self, db: Session, current_user: Optional[schemas.User]):
@@ -36,9 +39,11 @@ class FollowService(BaseService):
         Raises:
             HTTPException: If the user does not exist or is already followed.
         """
+        logger.info(f"Attempting to follow user with ID {user_id}")
         try:
             user_to_follow = self.db.query(User).filter(User.id == user_id).first()
             if not user_to_follow:
+                logger.warning(f"User with ID {user_id} not found")
                 raise HTTPException(status_code=404, detail="User not found")
 
             # Check if already following
@@ -46,17 +51,19 @@ class FollowService(BaseService):
                 follower_id=self.current_user.id, followed_id=user_id
             ).first()
             if existing_follow:
+                logger.warning(f"User with ID {user_id} is already followed by user {self.current_user.id}")
                 raise HTTPException(status_code=400, detail="You are already following this user.")
 
             # Create new follow relationship
             new_follow = Follow(follower_id=self.current_user.id, followed_id=user_id)
             self.db.add(new_follow)
             self.db.commit()
+            logger.info(f"User with ID {user_id} successfully followed by user {self.current_user.id}")
             return {"detail": f"User with id({user_id}) has been followed"}
 
         except SQLAlchemyError as e:
             self.db.rollback()
-            print(f"Error: {e}")
+            logger.error(f"Database error while following user with ID {user_id}: {e}")
             raise HTTPException(status_code=500, detail="Error following user")
 
     def unfollow_user(self, user_id: int):
@@ -72,10 +79,12 @@ class FollowService(BaseService):
         Raises:
             HTTPException: If the user does not exist or is not currently followed.
         """
+        logger.info(f"Attempting to unfollow user with ID {user_id}")
         try:
             # Check if the user to unfollow exists
             user_to_unfollow = self.db.query(User).filter(User.id == user_id).first()
             if not user_to_unfollow:
+                logger.warning(f"User with ID {user_id} not found")
                 raise HTTPException(status_code=404, detail="User not found")
 
             # Check if following exists
@@ -83,16 +92,18 @@ class FollowService(BaseService):
                 follower_id=self.current_user.id, followed_id=user_id
             ).first()
             if not existing_follow:
+                logger.warning(f"User with ID {user_id} is not currently followed by user {self.current_user.id}")
                 raise HTTPException(status_code=400, detail="You are not following this user.")
 
             # Delete follow relationship
             self.db.delete(existing_follow)
             self.db.commit()
+            logger.info(f"User with ID {user_id} successfully unfollowed by user {self.current_user.id}")
             return {"detail": f"User with id({user_id}) has been unfollowed"}
 
         except SQLAlchemyError as e:
             self.db.rollback()
-            print(f"Error: {e}")
+            logger.error(f"Database error while unfollowing user with ID {user_id}: {e}")
             raise HTTPException(status_code=500, detail="Error unfollowing user")
     
     def get_following(self, alt_user: Optional[int] = None) -> List[schemas.UserSummary]:

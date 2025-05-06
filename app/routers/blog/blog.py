@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -35,7 +36,8 @@ def get_current_user_blogs(service: BlogService = Depends(get_blog_service(True)
 
 
 @router.get('/{id}', status_code=status.HTTP_200_OK, response_model=schemas.Blog)
-def get_blog_by_id(id: int, service: BlogService = Depends(get_blog_service(False))):
+def get_blog_by_id(id: int, service: BlogService = Depends(get_blog_service(True))):
+    logging.info(f"get_blog_by_id endpoint has been called with id: {id}")
     return service.get_blog_by_id(id)
 
 @router.put('/{id}', status_code=status.HTTP_200_OK, dependencies=[Depends(role_required(['author']))])
@@ -50,4 +52,5 @@ def delete_blog(id: int, service: BlogService = Depends(get_blog_service(True)))
 
 @router.get('/tag/{tag}', status_code=status.HTTP_200_OK)
 def sort_by_tag(tag: str, service: BlogService = Depends(get_blog_service(False))) -> List[schemas.BlogSummary]:
+    logging.info(f"sort_by_tag endpoint has been called with tag: {tag}")
     return service.sort_by_tag(tag)
