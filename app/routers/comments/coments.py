@@ -2,11 +2,13 @@ from email.policy import HTTP
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from app.db.models import User
 from app.db.database import get_db
 from app.db import schemas
 from app.auth.auth_utils import get_current_user
-from app.services import CommentService
+from app.services.comment_service import CommentService
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(dependencies= [Depends(get_current_user)], tags=['comments'])
 

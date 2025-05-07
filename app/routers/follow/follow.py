@@ -1,13 +1,10 @@
-from venv import logger
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Optional
-from app.db.models import User, Follow
 from app.db.database import get_db
 from app.db import schemas
-from app.auth.auth_utils import get_current_user, role_required
-from app.services import FollowService
+from app.auth.auth_utils import get_current_user
+from app.services.follow_service import FollowService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -32,6 +29,7 @@ def follow_user(userId: int, service: FollowService = Depends(get_follow_service
 
 @router.delete('/{userId}', status_code=status.HTTP_202_ACCEPTED)
 def unfollow(userId: int, service: FollowService = Depends(get_follow_service(True))):
+    logging.info(f"unfollow_user endpoint has been called with userId: {userId}")
     return service.unfollow_user(userId)
 
 
@@ -42,6 +40,7 @@ def get_following(alt_user: Optional[int] = None, service: FollowService = Depen
 
 @router.get('/followers', status_code=status.HTTP_200_OK)
 def get_followers(alt_user: Optional[int] = None, service: FollowService = Depends(get_follow_service(True))) -> List[schemas.UserSummary]:
+    logger.info(f"get_followers endpoint has been called with alt_user: {alt_user}")
     return service.get_followers(alt_user)
 
 

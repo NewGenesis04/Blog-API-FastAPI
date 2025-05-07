@@ -2,11 +2,13 @@ import logging
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from app.db.models import User
 from app.db.database import get_db
 from app.db import schemas
-from app.services import BlogService
+from app.services.blog_service import BlogService
 from app.auth.auth_utils import get_current_user, role_required
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(dependencies= [Depends(get_current_user)], tags=['blog'])
 
@@ -23,15 +25,18 @@ def get_blog_service(require_user: bool = False):
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_blog(request: schemas.BlogCreate, service: BlogService = Depends(get_blog_service(True))) -> schemas.Blog:
+    logging.info("create_blog endpoint has been called")
     return service.create_blog(request)
 
 @router.get('/', status_code=status.HTTP_200_OK)
 def get_all_blogs(user_id: Optional[int] = None, service: BlogService = Depends(get_blog_service(True))) -> List[schemas.Blog]:
+    logging.info("get_all_blogs endpoint has been called")
     return service.get_all_blogs(user_id)
   
     
 @router.get('/current', status_code=status.HTTP_200_OK, dependencies=[Depends(role_required(['admin', 'author']))])
 def get_current_user_blogs(service: BlogService = Depends(get_blog_service(True))) -> List[schemas.Blog]:
+    logging.info("get_current_user_blogs endpoint has been called")
     return service.get_current_user_blogs()
 
 
@@ -42,11 +47,13 @@ def get_blog_by_id(id: int, service: BlogService = Depends(get_blog_service(True
 
 @router.put('/{id}', status_code=status.HTTP_200_OK, dependencies=[Depends(role_required(['author']))])
 def update_blog(request: schemas.BlogUpdate, id: int, service: BlogService = Depends(get_blog_service(True))):
+    logging.info(f"update_blog endpoint has been called with id: {id}")
     return service.update_blog(request, id)
 
 
 @router.delete('/{id}', status_code=status.HTTP_202_ACCEPTED, dependencies=[Depends(role_required(['admin', 'author']))])
 def delete_blog(id: int, service: BlogService = Depends(get_blog_service(True))):
+    logging.info(f"delete_blog endpoint has been called with id: {id}")
     return service.delete_blog(id)
 
 

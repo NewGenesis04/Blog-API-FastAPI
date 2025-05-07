@@ -1,12 +1,14 @@
 from fastapi import Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional, List
-from app.db.models import Blog, User
 from app.db.database import get_db
 from app.db import schemas
 from app.auth.auth_utils import get_current_user, role_required
 from fastapi import APIRouter
-from app.services import UserService
+from app.services.user_service import UserService
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def get_user_service(require_user: bool = False):
