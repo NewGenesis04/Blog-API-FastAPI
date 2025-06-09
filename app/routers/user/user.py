@@ -27,16 +27,20 @@ router = APIRouter(dependencies=[Depends(get_current_user)], tags=['user'])
 
 @router.get('/all', status_code=status.HTTP_200_OK) 
 def get_users(service: UserService = Depends(get_user_service(False))) -> List[schemas.UserSummary]:
+    logger.info("get_users endpoint has been called")
     return service.get_users()
 
 @router.get('/current', status_code=status.HTTP_200_OK)
 def get_user_by_id(altId : Optional[int] = None, service: UserService = Depends(get_user_service(True))) -> schemas.User:
+    logger.info("get_user_by_id endpoint has been called")
     return service.get_user_by_id(altId)
 
 @router.put('/update', status_code=status.HTTP_200_OK)
 def update_user(request: schemas.UserUpdate, service: UserService = Depends(get_user_service(True))):
+    logger.info("update_user endpoint has been called")
     return service.update_user(request)
     
 @router.delete('/delete', status_code=status.HTTP_202_ACCEPTED)
 def delete_user(service: UserService = Depends(get_user_service(True))):
+    logger.info("delete_user endpoint has been called")
     return service.delete_user()

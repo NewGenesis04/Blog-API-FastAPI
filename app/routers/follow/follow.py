@@ -29,7 +29,7 @@ def follow_user(userId: int, service: FollowService = Depends(get_follow_service
 
 @router.delete('/{userId}', status_code=status.HTTP_202_ACCEPTED)
 def unfollow(userId: int, service: FollowService = Depends(get_follow_service(True))):
-    logging.info(f"unfollow_user endpoint has been called with userId: {userId}")
+    logger.info(f"unfollow_user endpoint has been called with userId: {userId}")
     return service.unfollow_user(userId)
 
 

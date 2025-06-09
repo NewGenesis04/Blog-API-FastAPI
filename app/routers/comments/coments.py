@@ -25,16 +25,20 @@ def get_comment_service(require_user: bool = False):
 
 @router.post('/{blog_id}', status_code=status.HTTP_201_CREATED)
 def comment_on_blog(blog_id: int, service: CommentService = Depends(get_comment_service(True))) -> schemas.CreateComment:
+    logger.info(f"comment_on_blog endpoint has been called for blog_id: {blog_id}")
     return service.comment_on_blog(blog_id)
 
 @router.get("/{blog_id}", status_code=status.HTTP_200_OK)
 def get_comments(blog_id: int, include_all: Optional[bool] = False, author_id: Optional[int] = None, service: CommentService = Depends(get_comment_service(False))) -> List[schemas.GetComment]:
+    logger.info(f"get_comments endpoint has been called for blog_id: {blog_id}, include_all: {include_all}, author_id: {author_id}")
     return service.get_comments(blog_id, include_all, author_id)
 
 @router.put('/{comment_id}', status_code=status.HTTP_202_ACCEPTED)
 def update_comment(comment_id: int, request: schemas.CommentUpdate, service: CommentService = Depends(get_comment_service(True))) -> schemas.CommentUpdate:
+    logger.info(f"update_comment endpoint has been called for comment_id: {comment_id}")
     return service.update_comment(comment_id, request)
 
 @router.delete('/{comment_id}', status_code=status.HTTP_202_ACCEPTED)
 def delete_comment(comment_id: int, service: CommentService = Depends(get_comment_service(True))):
+    logger.info(f"delete_comment endpoint has been called for comment_id: {comment_id}")
     return service.delete_comment(comment_id)

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from app.utils import filter_user
 from app.db.database import get_db
+from datetime import timedelta
 from app.db.models import User, RevokedToken
 from app.db import schemas
 

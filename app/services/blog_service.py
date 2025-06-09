@@ -168,7 +168,7 @@ class BlogService(BaseService):
         Args:
             request (schemas.BlogUpdate): The updated blog data.
             id (int): The ID of the blog to update.
-
+        
         Returns:
             dict: A success message indicating the blog has been updated.
 
