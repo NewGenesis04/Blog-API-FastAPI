@@ -26,7 +26,7 @@ class BlogService(BaseService):
             HTTPException: If the author does not exist or an error occurs.
         """
         try:
-            author_id = self.current_user.id
+            
             if self.current_user.role == 'admin':
                 author_id = request.author_id or self.current_user.id #Use payload id if available in request else default to current user(admin)
                         
@@ -37,6 +37,8 @@ class BlogService(BaseService):
                     status_code=404,
                     detail=f"Author with id({request.author_id}) not found"
                     )
+            else:
+                author_id = self.current_user.id
             
             new_blog = Blog(title=request.title,
                             content=request.content,
@@ -74,6 +76,8 @@ class BlogService(BaseService):
             HTTPException: If no blogs are found or an error occurs.
         """
         try:
+            query = self.db.query(Blog)
+
             if self.current_user is None:
                 # Unauthenticated users see only published blogs
                 query = query.filter(Blog.published == True)
@@ -88,13 +92,13 @@ class BlogService(BaseService):
                 query = query.filter(Blog.published == True)
                 if user_id:
                     query = query.filter(Blog.author_id == user_id)
-                    query = query.filter(Blog.author_id == user_id)
 
             blogs = query.all()
 
             if not blogs:
                 raise HTTPException(status_code=404, detail="Blogs not found")
 
+            return blogs
 
         except HTTPException:
             raise

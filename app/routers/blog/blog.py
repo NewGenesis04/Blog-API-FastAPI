@@ -13,7 +13,13 @@ logger = logging.getLogger(__name__)
 router = APIRouter(dependencies= [Depends(get_current_user)], tags=['blog'])
 
 def get_blog_service(require_user: bool = False):
-    """Factory to enforce (or skip) auth dynamically per route."""
+    """
+    Factory to enforce (or skip) auth dynamically per route.
+
+    Magic: If `require_user=False` but a valid token is provided, 
+    the user is still injected! This allows routes to work for both public and private use cases.
+    
+    """
     def _get_service(                                                
         db: Session = Depends(get_db),
         current_user: Optional[schemas.User] = Depends(get_current_user) if require_user else None,
@@ -23,7 +29,7 @@ def get_blog_service(require_user: bool = False):
         return BlogService(db, current_user)  # Passes user=None if not required
     return _get_service
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(role_required(['admin', 'author']))])
 def create_blog(request: schemas.BlogCreate, service: BlogService = Depends(get_blog_service(True))) -> schemas.Blog:
     logger.info("create_blog endpoint has been called")
     return service.create_blog(request)

@@ -13,7 +13,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter(dependencies= [Depends(get_current_user)], tags=['comments'])
 
 def get_comment_service(require_user: bool = False):
-    """Factory to enforce (or skip) auth dynamically per route."""
+    """
+    Factory to enforce (or skip) auth dynamically per route.
+
+    Magic: If `require_user=False` but a valid token is provided, 
+    the user is still injected! This allows routes to work for both public and private use cases.    
+    """
     def _get_service(                                                
         db: Session = Depends(get_db),
         current_user: Optional[schemas.User] = Depends(get_current_user) if require_user else None,
