@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException
+from sqlalchemy.orm import Session
 from fastapi.staticfiles import StaticFiles
 from app.auth.auth import router as auth_router
 from app.routers.blog.blog import router as blog_router
@@ -6,6 +7,7 @@ from app.routers.user.user import router as user_router
 from app.routers.follow.follow import router as follow_router
 from app.routers.comments.coments import router as comments_router
 from app.routers.files.files import router as files_router
+from app.db.database import get_db
 import os
 import cloudinary
 from dotenv import load_dotenv
@@ -62,6 +64,15 @@ cloudinary.config(
 )
 
 @app.get('/')
-def index():
-    logger.info("Root endpoint accessed")
-    return {"message": "Welcome to the blog app"}
+def index(db: Session = Depends(get_db)):
+    try:
+        logger.info("Root endpoint accessed")
+        # Perform a simple database operation to check health
+        db.execute("SELECT 1")
+        logger.info("Database health check successful")
+        return {"message": "Welcome to the blog app", "status": "healthy", }
+    except Exception as e:
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Database health check failed: {str(e)}"
+            )
