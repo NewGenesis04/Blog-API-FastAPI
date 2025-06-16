@@ -10,7 +10,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 def get_user_service(require_user: bool = False):
     """Factory to enforce (or skip) auth dynamically per route."""
     def _get_service(                                                
@@ -22,8 +21,7 @@ def get_user_service(require_user: bool = False):
         return UserService(db, current_user)
     return _get_service
 
-router = APIRouter(dependencies=[Depends(get_current_user)], tags=['user'])
-
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 @router.get('/all', status_code=status.HTTP_200_OK) 
 def get_users(service: UserService = Depends(get_user_service(False))) -> List[schemas.UserSummary]:

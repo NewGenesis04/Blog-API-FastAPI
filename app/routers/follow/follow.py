@@ -9,7 +9,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(dependencies= [Depends(get_current_user)], tags=['follow'])
+router = APIRouter(dependencies= [Depends(get_current_user)])
 
 def get_follow_service(require_user: bool = False):
     """Factory to enforce (or skip) auth dynamically per route."""

@@ -12,7 +12,7 @@ from app.db import schemas
 from app.auth.auth_utils import hash_password, verify_access_token, verify_password, get_current_user
 from app.auth.auth_utils import oauth2_scheme, create_token, authenticate_user, revoke_token
 
-router = APIRouter(tags=['auth'])
+router = APIRouter()
 
 # @router.post('/login')
 # def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):

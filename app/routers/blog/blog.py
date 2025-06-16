@@ -10,7 +10,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(dependencies= [Depends(get_current_user)], tags=['blog'])
+router = APIRouter(dependencies= [Depends(get_current_user)])
 
 def get_blog_service(require_user: bool = False):
     """

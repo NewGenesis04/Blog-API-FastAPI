@@ -11,7 +11,7 @@ from app.auth.auth_utils import get_current_user
 from app.utils import upload_profile_picture
 import cloudinary.uploader
 
-router = APIRouter(dependencies=[Depends(get_current_user)], tags=['files'])
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 @router.post('/upload-profile-pic')
 def upload_profile_pic(db: Session = Depends(get_db), user: User = Depends(get_current_user), file: UploadFile = File(...)):
