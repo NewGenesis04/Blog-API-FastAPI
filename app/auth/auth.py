@@ -29,7 +29,7 @@ def login(request: schemas.AuthLogin, db: Session = Depends(get_db)):
     user = authenticate_user(db, request.identifier, request.password)
     if not user:
        raise HTTPException(status_code=400, detail="Incorrect username/email or password")
-    access_token = create_token(data={"sub": str(user.id)}, expires_delta=timedelta(minutes=5))
+    access_token = create_token(data={"sub": str(user.id)}, expires_delta=timedelta(minutes=15))
     refresh_token = create_token(data={"sub": str(user.id)}, expires_delta=timedelta(days=7))
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type":"bearer"}
 
