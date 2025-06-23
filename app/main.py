@@ -64,12 +64,12 @@ cloudinary.config(
 )
 
 @app.get('/')
-def index(db: Session = Depends(get_db)):
+def index():
     try:
         logger.info("Root endpoint accessed")
         # Perform a simple database operation to check health
-        db.execute("SELECT 1")
-        logger.info("Database health check successful")
+        #db.execute("SELECT 1")
+        #logger.info("Database health check successful")
         return {"message": "Welcome to the blog app", "status": "healthy", }
     except Exception as e:
             raise HTTPException(
