@@ -32,3 +32,22 @@ def upload_profile_picture(user: User, file: UploadFile, db: Session):
     
     except Exception as e:
         return {"error": str(e)}
+    
+def upload_cover_photo(user: User, file: UploadFile, db: Session):
+    try:
+        if user.cover_photo_url:
+            public_id = user.cover_photo_url.split("/")[-1].split(".")[0]
+            cloudinary.uploader.destroy(public_id)
+
+
+        upload_response = cloudinary.uploader.upload(file.file)
+        img_url = upload_response["secure_url"]
+
+        user.cover_photo_url = img_url
+        db.commit()
+        db.refresh(user)
+
+        return {"image_url": img_url}
+    
+    except Exception as e:
+        return {"error": str(e)}

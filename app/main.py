@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from fastapi.staticfiles import StaticFiles
 from app.auth.auth import router as auth_router
 from app.routers.blog.blog import router as blog_router
@@ -63,16 +64,23 @@ cloudinary.config(
     secure=True
 )
 
+
 @app.get('/')
-def index():
+def index(db: Session = Depends(get_db)):  # Inject db session
     try:
         logger.info("Root endpoint accessed")
-        # Perform a simple database operation to check health
-        #db.execute("SELECT 1")
-        #logger.info("Database health check successful")
-        return {"message": "Welcome to the blog app", "status": "healthy", }
+        db.execute(text("SELECT 1"))
+        logger.info("Database health check successful")
+        
+        return {
+            "message": "Welcome to the blog app",
+            "status": "healthy",
+            "database": "connected"
+        }
+        
     except Exception as e:
-            raise HTTPException(
-                status_code=500, 
-                detail=f"Database health check failed: {str(e)}"
-            )
+        logger.error(f"Database health check failed: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database health check failed: {str(e)}"
+        )

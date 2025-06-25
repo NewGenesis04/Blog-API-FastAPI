@@ -5,6 +5,7 @@ from app.db.models import User
 from app.db import schemas
 from typing import List, Optional
 
+from app.routers import user
 from app.services.base_service import BaseService
 
 # Initialize logger
@@ -32,7 +33,7 @@ class UserService(BaseService):
             raise HTTPException(
             status_code=500, detail="Error fetching users")
 
-    def get_user_by_id(self, altId: Optional[int] = None) -> schemas.User:
+    def get_current_user(self, altId: Optional[int] = None) -> schemas.User:
         """
         Retrieve a user by their ID.
 
@@ -100,7 +101,10 @@ class UserService(BaseService):
             HTTPException: If the user does not exist or an error occurs.
         """
         try:
-            self.db.delete(self.current_user)
+            user = self.db.query(User).filter(User.id == self.current_user.id).first()
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+            self.db.delete(user)
             self.db.commit()
             return {"detail": f"User with name: {self.current_user.username} and id: {self.current_user.id} has been deleted"}
         except (SQLAlchemyError, Exception) as e:

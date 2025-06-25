@@ -1,7 +1,7 @@
 import logging
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi import HTTPException
-from app.db.models import Comment, Blog
+from app.db.models import Comment, Blog, CommentLike
 from app.db import schemas
 from typing import Optional
 
@@ -88,6 +88,91 @@ class CommentService(BaseService):
         except Exception as e:
             print(f"Error getting comments: {str(e)}")
             raise HTTPException(status_code=500, detail="Error getting comments")
+    
+    def like_comment(self, comment_id: int) -> dict:
+        """
+        Like a comment by its ID.
+
+        Args:
+            comment_id (int): The ID of the comment to like.
+
+        Raises:
+            HTTPException: If the comment does not exist or the user has already liked it.
+        """
+        try:
+            comment = self.db.query(Comment).filter(Comment.id == comment_id).first()
+            if not comment:
+                raise HTTPException(status_code=404, detail="Comment not found")
+            
+            existing_like = self.db.query(CommentLike).filter(
+                CommentLike.comment_id == comment_id,
+                  CommentLike.user_id == self.current_user.id
+                  ).first()
+            if existing_like:
+                raise HTTPException(status_code=400, detail="You have already liked this comment")
+            
+            comment.likes += 1
+            self.db.commit()
+            self.db.refresh(comment)
+
+            new_like = CommentLike(comment_id=comment_id, user_id=self.current_user.id)
+            self.db.add(new_like)
+            self.db.commit()
+
+            return {"detail": f"Comment with id({comment_id}) has been liked"}
+        
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            print(f"Error liking comment: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error liking comment")
+        except HTTPException:
+            raise
+        except Exception as e:
+            self.db.rollback()
+            print(f"Error liking comment: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error liking comment")
+        
+    def unlike_comment(self, comment_id: int) -> dict:
+        """
+        Unlike a comment by its ID.
+
+        Args:
+            comment_id (int): The ID of the comment to unlike.
+
+        Raises:
+            HTTPException: If the comment does not exist or the user has not liked it.
+        """
+        try:
+            comment = self.db.query(Comment).filter(Comment.id == comment_id).first()
+            if not comment:
+                raise HTTPException(status_code=404, detail="Comment not found")
+            
+            existing_like = self.db.query(CommentLike).filter(
+                CommentLike.comment_id == comment_id,
+                CommentLike.user_id == self.current_user.id
+            ).first()
+            if not existing_like:
+                raise HTTPException(status_code=400, detail="You have not liked this comment")
+            
+            comment.likes -= 1
+            self.db.commit()
+            self.db.refresh(comment)
+
+            self.db.delete(existing_like)
+            self.db.commit()
+
+            return {"detail": f"Comment with id({comment_id}) has been unliked"}
+        
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            print(f"Error unliking comment: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error unliking comment")
+        except HTTPException:
+            raise
+        except Exception as e:
+            self.db.rollback()
+            print(f"Error unliking comment: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error unliking comment")
             
     def update_comment(self, request: schemas.CommentUpdate, comment_id)  -> schemas.CommentUpdate:
         """

@@ -86,6 +86,8 @@ class Blog(BlogBase):
 class UserBase(BaseModel):
     username: str
     email: EmailStr
+    job_description: str
+    created_at: datetime
 
     class Config:
         from_attributes = True
@@ -100,6 +102,7 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     role: Optional[str] = None
     bio: Optional[str] = None
+    job_description: Optional[str] = None
 
 
 class UserSummary(BaseModel):
@@ -107,6 +110,8 @@ class UserSummary(BaseModel):
     username: str
     email: EmailStr
     role: str
+    created_at: datetime
+    job_description: Optional[str] = None
     profile_url: Optional[str] = None
 
     class Config:
@@ -116,7 +121,12 @@ class UserSummary(BaseModel):
 class User(UserBase):
     id: int
     role: str
+    bio: Optional[str] = None
+    job_description: Optional[str] = None
     profile_url: Optional[str] = None
+    cover_photo_url: Optional[str] = None
+    created_at: datetime
+
     blogs: List[BlogSummary] = []
 
     class Config:

@@ -9,6 +9,7 @@ from datetime import timedelta
 from app.db.models import User, RevokedToken
 from app.db import schemas
 
+from app.api_descriptions import AUTH_LOGIN, AUTH_REGISTER, AUTH_UPDATE_PASSWORD, AUTH_LOGOUT, AUTH_REFRESH, AUTH_GET_ME
 from app.auth.auth_utils import hash_password, verify_access_token, verify_password, get_current_user
 from app.auth.auth_utils import oauth2_scheme, create_token, authenticate_user, revoke_token
 
@@ -24,7 +25,7 @@ router = APIRouter()
 #     return {"access_token": access_token, "refresh_token": refresh_token, "token_type":"bearer"}
 
 
-@router.post('/login')
+@router.post('/login', description=AUTH_LOGIN)
 def login(request: schemas.AuthLogin, db: Session = Depends(get_db)):
     user = authenticate_user(db, request.identifier, request.password)
     if not user:
@@ -33,7 +34,7 @@ def login(request: schemas.AuthLogin, db: Session = Depends(get_db)):
     refresh_token = create_token(data={"sub": str(user.id)}, expires_delta=timedelta(days=7))
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type":"bearer"}
 
-@router.get("/me")
+@router.get("/me", description=AUTH_GET_ME)
 def get_me(user: User = Depends(get_current_user)):
     return {
         "id": user.id,
@@ -42,7 +43,7 @@ def get_me(user: User = Depends(get_current_user)):
         "role": user.role,
     }
 
-@router.post('/register')
+@router.post('/register', description=AUTH_REGISTER)
 def register_user(request: schemas.UserCreate, db: Session = Depends(get_db)) -> schemas.UserSummary:
     existing_user = filter_user(db, User.email == request.email)
     if existing_user.first():
@@ -61,7 +62,7 @@ def register_user(request: schemas.UserCreate, db: Session = Depends(get_db)) ->
         raise HTTPException(
             status_code=500, detail="Error creating new user")
     
-@router.put('/update_password')
+@router.put('/update_password', description=AUTH_UPDATE_PASSWORD)
 def update_password(request: schemas.AuthPasswordUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     try:
         if not verify_password(request.old_password, user.password):
@@ -80,7 +81,7 @@ def update_password(request: schemas.AuthPasswordUpdate, db: Session = Depends(g
         print(f"Error updating password: {str(e)}")
         raise HTTPException(status_code=500, detail="Error updating password")
     
-@router.post("/logout")
+@router.post("/logout", description=AUTH_LOGOUT)
 def logout(refresh_token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     try:
         # Revoke it
@@ -96,7 +97,7 @@ def logout(refresh_token: str = Depends(oauth2_scheme), db: Session = Depends(ge
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
     
-@router.post("/refresh")
+@router.post("/refresh", description=AUTH_REFRESH)
 def refresh_token(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     try:
         user = verify_access_token(token)

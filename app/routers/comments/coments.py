@@ -28,7 +28,7 @@ def get_comment_service(require_user: bool = False):
         return CommentService(db, current_user)
     return _get_service
 
-@router.post('/{blog_id}', status_code=status.HTTP_201_CREATED)
+@router.post('/{blog_id}', status_code=status.HTTP_201_CREATED, description="Add a comment to a blog post. Requires authentication.")
 def comment_on_blog(blog_id: int, service: CommentService = Depends(get_comment_service(True))) -> schemas.CreateComment:
     logger.info(f"comment_on_blog endpoint has been called for blog_id: {blog_id}")
     return service.comment_on_blog(blog_id)
@@ -37,6 +37,16 @@ def comment_on_blog(blog_id: int, service: CommentService = Depends(get_comment_
 def get_comments(blog_id: int, include_all: Optional[bool] = False, author_id: Optional[int] = None, service: CommentService = Depends(get_comment_service(False))) -> List[schemas.GetComment]:
     logger.info(f"get_comments endpoint has been called for blog_id: {blog_id}, include_all: {include_all}, author_id: {author_id}")
     return service.get_comments(blog_id, include_all, author_id)
+
+@router.post('/like/{comment_id}', status_code=status.HTTP_202_ACCEPTED)
+def like_comment(comment_id: int, service: CommentService = Depends(get_comment_service(True))) -> dict:
+    logger.info(f"like_comment endpoint has been called for comment_id: {comment_id}")
+    return service.like_comment(comment_id)
+
+@router.post('/unlike/{comment_id}', status_code=status.HTTP_202_ACCEPTED)
+def unlike_comment(comment_id: int, service: CommentService = Depends(get_comment_service(True))) -> dict:
+    logger.info(f"unlike_comment endpoint has been called for comment_id: {comment_id}")
+    return service.unlike_comment(comment_id)
 
 @router.put('/{comment_id}', status_code=status.HTTP_202_ACCEPTED)
 def update_comment(comment_id: int, request: schemas.CommentUpdate, service: CommentService = Depends(get_comment_service(True))) -> schemas.CommentUpdate:
