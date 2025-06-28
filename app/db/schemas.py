@@ -76,6 +76,8 @@ class Blog(BlogBase):
     author_id: Optional[int] = None
     created_at: datetime
     tag: Optional[str] = None
+    like_count: Optional[int] = 0
+    comment_count: Optional[int] = 0
 
     class Config:
         from_attributes = True  # Tells Pydantic to treat SQLAlchemy models like dicts
@@ -162,6 +164,7 @@ class GetComment(CommentBase):
     author_id: int
     blog_id: int
     created_at: datetime
+    likes_count: Optional[int] = 0
 
     class Config:
         from_attributes = True

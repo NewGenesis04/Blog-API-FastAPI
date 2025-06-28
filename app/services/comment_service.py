@@ -42,13 +42,13 @@ class CommentService(BaseService):
             return new_comment
         
         except SQLAlchemyError as e:
-            print(f"Error creating comment: {str(e)}")
+            logger.error(f"Error creating comment: {str(e)}")
             raise HTTPException(
                 status_code=500, detail="Error creating comment")
         except HTTPException:
             raise
         except Exception as e:
-            print(f"Error creating comment: {str(e)}")
+            logger.error(f"Error creating comment: {str(e)}")
             raise HTTPException(
                 status_code=500, detail="Error creating comment") 
     
@@ -78,15 +78,20 @@ class CommentService(BaseService):
             if not comments:
                 raise HTTPException(status_code=404, detail="No comments found")
             
-            return comments
-            
+            return [
+                schemas.GetComment(
+                    **{k: v for k, v in comment.__dict__.items() if not k.startswith('_')},
+                    likes_count=len(comment.likes) if  hasattr(comment, 'likes') and comment.likes else 0
+                )   
+                for comment in comments
+            ]
         except SQLAlchemyError as e:
-            print(f"Error getting comments: {str(e)}")
+            logger.error(f"Error getting comments: {str(e)}")
             raise HTTPException(status_code=500, detail="Error getting comments")
         except HTTPException:
             raise
         except Exception as e:
-            print(f"Error getting comments: {str(e)}")
+            logger.error(f"Error getting comments: {str(e)}")
             raise HTTPException(status_code=500, detail="Error getting comments")
     
     def like_comment(self, comment_id: int) -> dict:
@@ -110,8 +115,6 @@ class CommentService(BaseService):
                   ).first()
             if existing_like:
                 raise HTTPException(status_code=400, detail="You have already liked this comment")
-            
-            comment.likes += 1
             self.db.commit()
             self.db.refresh(comment)
 
@@ -123,13 +126,13 @@ class CommentService(BaseService):
         
         except SQLAlchemyError as e:
             self.db.rollback()
-            print(f"Error liking comment: {str(e)}")
+            logger.error(f"Error liking comment: {str(e)}")
             raise HTTPException(status_code=500, detail="Error liking comment")
         except HTTPException:
             raise
         except Exception as e:
             self.db.rollback()
-            print(f"Error liking comment: {str(e)}")
+            logger.error(f"Error liking comment: {str(e)}")
             raise HTTPException(status_code=500, detail="Error liking comment")
         
     def unlike_comment(self, comment_id: int) -> dict:
@@ -153,8 +156,7 @@ class CommentService(BaseService):
             ).first()
             if not existing_like:
                 raise HTTPException(status_code=400, detail="You have not liked this comment")
-            
-            comment.likes -= 1
+
             self.db.commit()
             self.db.refresh(comment)
 
@@ -165,13 +167,13 @@ class CommentService(BaseService):
         
         except SQLAlchemyError as e:
             self.db.rollback()
-            print(f"Error unliking comment: {str(e)}")
+            logger.error(f"Error unliking comment: {str(e)}")
             raise HTTPException(status_code=500, detail="Error unliking comment")
         except HTTPException:
             raise
         except Exception as e:
             self.db.rollback()
-            print(f"Error unliking comment: {str(e)}")
+            logger.error(f"Error unliking comment: {str(e)}")
             raise HTTPException(status_code=500, detail="Error unliking comment")
             
     def update_comment(self, request: schemas.CommentUpdate, comment_id)  -> schemas.CommentUpdate:
@@ -202,13 +204,13 @@ class CommentService(BaseService):
         
         except SQLAlchemyError as e:
             self.db.rollback()
-            print(f"Error updating comments: {str(e)}")
+            logger.error(f"Error updating comments: {str(e)}")
             raise HTTPException(status_code=500, detail="Error updating comment")
         except HTTPException:
             raise
         except Exception as e:
             self.db.rollback()
-            print(f"Error updating comments: {str(e)}")
+            logger.error(f"Error updating comments: {str(e)}")
             raise HTTPException(status_code=500, detail="Error updating comment")
     
     def delete_comment(self, comment_id: int):
@@ -238,11 +240,11 @@ class CommentService(BaseService):
         
         except SQLAlchemyError as e:
             self.db.rollback()
-            print(f"Error deleting comment: {str(e)}")
+            logger.error(f"Error deleting comment: {str(e)}")
             raise HTTPException(status_code=500, detail="Error deleting comment")
         except HTTPException:
             raise
         except Exception as e:
             self.db.rollback()
-            print(f"Error deleting comment: {str(e)}")
+            logger.error(f"Error deleting comment: {str(e)}")
             raise HTTPException(status_code=500, detail="Error deleting comment")
