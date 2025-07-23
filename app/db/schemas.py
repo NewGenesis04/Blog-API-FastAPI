@@ -151,28 +151,3 @@ class Unfollow(FollowBase):
     
     class Config:
         from_attributes = True
-
-
-class CommentBase(BaseModel):
-    content: str
-    
-    class Config:
-        from_attributes = True
-
-class GetComment(CommentBase):
-    id: int
-    author_id: int
-    blog_id: int
-    created_at: datetime
-    likes_count: Optional[int] = 0
-
-    class Config:
-        from_attributes = True
-
-
-class CreateComment(CommentBase):
-    pass
-
-class CommentUpdate(CommentBase):
-    pass
-    

@@ -6,7 +6,7 @@ from app.auth.auth import router as auth_router
 from app.routers.blog.blog import router as blog_router
 from app.routers.user.user import router as user_router
 from app.routers.follow.follow import router as follow_router
-from app.routers.comments.coments import router as comments_router
+from app.routers.comments.comments import router as comments_router
 from app.routers.files.files import router as files_router
 from app.db.database import get_db
 import os

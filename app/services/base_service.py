@@ -14,3 +14,4 @@ class BaseService:
         """
         self.db = db
         self.current_user = current_user
+        
